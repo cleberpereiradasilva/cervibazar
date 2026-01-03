@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  AtSign,
-  BadgeCheck,
-  Eye,
-  EyeOff,
-  Info,
-  Lock,
-  LockKeyhole,
-  Save,
-  UserPlus,
-} from "lucide-react";
+import { AtSign, Eye, EyeOff, Info, Lock, LockKeyhole, Save, UserPlus } from "lucide-react";
 import { userInputSchema } from "@/app/lib/validators/userInputSchema";
 import { userUpdateSchema } from "@/app/lib/validators/userUpdateSchema";
 import { z } from "zod";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Button } from "../../components/ui/button";
+import { Select } from "../../components/ui/select";
+import { Card } from "../../components/ui/card";
 
 const nameSchema = z
   .string()
@@ -250,8 +245,8 @@ export default function UserForm({
   };
 
   return (
-    <section className="rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark">
-      <div className="mb-6 flex items-center gap-2 border-b border-[#e6e1e8] pb-4 text-text-main dark:border-[#452b4d] dark:text-white">
+    <Card className="p-6">
+      <div className="mb-6 flex items-center gap-2 border-b border-border pb-4 text-text-main dark:border-[#452b4d] dark:text-white">
         <UserPlus className="h-5 w-5 text-primary" />
         <h3 className="text-lg font-bold">
           {editingUser ? "Editar Usuário" : "Dados do Usuário"}
@@ -261,15 +256,16 @@ export default function UserForm({
       <form className="grid gap-6 md:grid-cols-2" onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div>
-            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+            <Label className="mb-2 ml-1 block" htmlFor="name">
               Nome Completo
-            </label>
+            </Label>
             <div className="group relative">
-              <BadgeCheck className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
-              <input
-                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-4 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+              <AtSign className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+              <Input
+                id="name"
                 placeholder="Nome e sobrenome"
-                type="text"
+                aria-required="true"
+                className="pl-12"
                 value={name}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -289,15 +285,16 @@ export default function UserForm({
           </div>
 
           <div>
-            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+            <Label className="mb-2 ml-1 block" htmlFor="username">
               Login de Acesso
-            </label>
+            </Label>
             <div className="group relative">
               <AtSign className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
-              <input
-                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-4 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+              <Input
+                id="username"
                 placeholder="nome.sobrenome"
-                type="text"
+                aria-required="true"
+                className="pl-12"
                 value={username}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -320,40 +317,25 @@ export default function UserForm({
           </div>
 
           <div>
-            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+            <Label className="mb-2 ml-1 block" htmlFor="role">
               Perfil
-            </label>
-            <div className="group relative">
-              <BadgeCheck className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
-              <select
-                className="h-12 w-full cursor-pointer appearance-none rounded-2xl border-transparent bg-background-light pl-12 pr-10 text-text-main transition-all focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
-                value={role}
-                onChange={(event) => {
-                  const value = event.target.value as "admin" | "caixa" | "";
-                  setRole(value);
-                  setTouched((prev) => ({ ...prev, role: true }));
-                  validateField("role", { role: value });
-                }}
-                onBlur={() => touched.role && validateField("role")}
-              >
-                <option value="">Selecione um perfil</option>
-                <option value="admin">Administrador</option>
-                <option value="caixa">Operador de Caixa</option>
-              </select>
-              <svg
-                className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="m19 9-7 7-7-7"
-                />
-              </svg>
-            </div>
+            </Label>
+            <Select
+              id="role"
+              options={[
+                { value: "admin", label: "Administrador" },
+                { value: "caixa", label: "Operador de Caixa" },
+              ]}
+              value={role}
+              onChange={(event) => {
+                const value = event.target.value as "admin" | "caixa" | "";
+                setRole(value);
+                setTouched((prev) => ({ ...prev, role: true }));
+                validateField("role", { role: value });
+              }}
+              onBlur={() => touched.role && validateField("role")}
+              placeholder="Selecione um perfil"
+            />
             {fieldErrors.role && (
               <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
                 <Info className="h-4 w-4" />
@@ -365,15 +347,16 @@ export default function UserForm({
 
         <div className="space-y-4">
           <div>
-            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+            <Label className="mb-2 ml-1 block" htmlFor="password">
               Senha
-            </label>
+            </Label>
             <div className="group relative">
               <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
-              <input
-                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-12 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+              <Input
+                id="password"
                 placeholder="••••••••"
                 type={showPassword ? "text" : "password"}
+                className="pl-12 pr-12"
                 value={password}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -393,6 +376,7 @@ export default function UserForm({
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary focus:outline-none"
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -410,15 +394,16 @@ export default function UserForm({
           </div>
 
           <div>
-            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+            <Label className="mb-2 ml-1 block" htmlFor="confirmPassword">
               Confirmação de Senha
-            </label>
+            </Label>
             <div className="group relative">
               <LockKeyhole className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
-              <input
-                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-12 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+              <Input
+                id="confirmPassword"
                 placeholder="••••••••"
                 type={showConfirmPassword ? "text" : "password"}
+                className="pl-12 pr-12"
                 value={confirmPassword}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -437,6 +422,11 @@ export default function UserForm({
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary focus:outline-none"
                 type="button"
                 onClick={() => setShowConfirmPassword((previous) => !previous)}
+                aria-label={
+                  showConfirmPassword
+                    ? "Esconder confirmação de senha"
+                    : "Mostrar confirmação de senha"
+                }
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -464,10 +454,11 @@ export default function UserForm({
 
           <div className="flex flex-col gap-2 pt-2 md:items-end">
             <div className="flex w-full flex-col gap-2 md:flex-row md:justify-end">
-              <button
-                className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-hover active:scale-[0.98]"
+              <Button
+                className="gap-2"
                 type="submit"
                 disabled={saving}
+                tabIndex={0}
               >
                 <Save className="h-5 w-5" />
                 {saving
@@ -475,22 +466,24 @@ export default function UserForm({
                   : editingUser
                     ? "Atualizar"
                     : "Salvar"}
-              </button>
-              <button
-                className="flex items-center justify-center gap-2 rounded-md border border-[#e6e1e8] px-4 py-2 text-sm font-bold text-text-secondary transition-all hover:bg-background-light dark:border-[#452b4d] dark:hover:bg-[#382240]"
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2 border border-[#e6e1e8] dark:border-[#452b4d]"
                 type="button"
                 onClick={() => {
                   resetForm();
                   onCancelEdit();
                 }}
                 disabled={saving}
+                tabIndex={0}
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </form>
-    </section>
+    </Card>
   );
 }
