@@ -5,11 +5,16 @@ import UserForm from "./UserForm";
 import UserTable from "./UserTable";
 import type { PublicUser } from "@/app/hooks/useUsers";
 import { useState } from "react";
+import { Button } from "../../components/ui/button";
+import { Sheet } from "../../components/ui/sheet";
+import { Card } from "../../components/ui/card";
+import { Separator } from "../../components/ui/separator";
 
 export default function UsuariosClientPage() {
   const { users, loading, saving, error, stats, create, remove, update } =
     useUsers();
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   const handleSubmit = async (input: {
     name: string;
@@ -22,11 +27,16 @@ export default function UsuariosClientPage() {
       const result = await update(editingUser.id, input);
       if (result.ok) {
         setEditingUser(null);
+        setFormOpen(false);
       }
       return result;
     }
 
-    return create(input);
+    const created = await create(input);
+    if (created.ok) {
+      setFormOpen(false);
+    }
+    return created;
   };
 
   return (
@@ -40,16 +50,27 @@ export default function UsuariosClientPage() {
             Cadastre e controle o acesso dos operadores ao sistema.
           </p>
         </div>
-        <div className="flex gap-3 text-sm text-text-secondary">
-          <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
-            {stats.admins} Admin
-          </span>
-          <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
-            {stats.operators} Operador
-          </span>
-          <span className="rounded-full bg-accent/10 px-3 py-1 font-semibold text-accent">
-            {stats.total} Total
-          </span>
+        <div className="flex flex-col items-end gap-3 text-sm text-text-secondary">
+          <div className="flex gap-3">
+            <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
+              {stats.admins} Admin
+            </span>
+            <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
+              {stats.operators} Operador
+            </span>
+            <span className="rounded-full bg-accent/10 px-3 py-1 font-semibold text-accent">
+              {stats.total} Total
+            </span>
+          </div>
+          <Button
+            className="gap-2"
+            onClick={() => {
+              setEditingUser(null);
+              setFormOpen(true);
+            }}
+          >
+            Novo Usuário
+          </Button>
         </div>
       </div>
 
@@ -59,21 +80,57 @@ export default function UsuariosClientPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-6">
-        <UserForm
-          onSubmit={handleSubmit}
-          onCancelEdit={() => setEditingUser(null)}
-          editingUser={editingUser}
-          saving={saving}
-          error={error}
-        />
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-text-secondary">
+            Usuários cadastrados
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              setEditingUser(null);
+              setFormOpen(true);
+            }}
+          >
+            Novo Usuário
+          </Button>
+        </div>
+        <Separator className="my-3" />
         <UserTable
           users={users}
           loading={loading}
           onDelete={remove}
-          onEdit={(user) => setEditingUser(user)}
+          onEdit={(user) => {
+            setEditingUser(user);
+            setFormOpen(true);
+          }}
         />
-      </div>
+      </Card>
+
+      <Sheet
+        open={formOpen}
+        onOpenChange={(isOpen) => {
+          setFormOpen(isOpen);
+          if (!isOpen) setEditingUser(null);
+        }}
+        title={editingUser ? "Editar Usuário" : "Novo Usuário"}
+        className="w-full max-w-xl"
+      >
+        <div className="p-6">
+          <UserForm
+            onSubmit={handleSubmit}
+            onCancelEdit={() => {
+              setEditingUser(null);
+              setFormOpen(false);
+            }}
+            editingUser={editingUser}
+            saving={saving}
+            error={error}
+          />
+        </div>
+      </Sheet>
     </div>
   );
 }

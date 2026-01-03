@@ -1,101 +1,145 @@
-import { createHash, randomUUID } from "crypto";
+import { and, eq, isNull } from "drizzle-orm";
+import { hash } from "bcryptjs";
+import { getDb } from "../db/client";
+import { users } from "../db/schema/users";
+import { generateShortId } from "../id/generateShortId";
+import { SEED_ADMIN_ID } from "@/app/constants";
 
-type StoredUser = {
-  id: string;
-  name: string;
-  username: string;
-  role: "admin" | "caixa";
-  passwordHash: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-const memoryUsers: StoredUser[] = [
-  {
-    id: randomUUID(),
-    name: "Ana Silva",
-    username: "ana.silva",
-    role: "caixa",
-    passwordHash: createHash("sha256").update("senha123").digest("hex"),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: randomUUID(),
-    name: "Roberto Costa",
-    username: "roberto.costa",
-    role: "admin",
-    passwordHash: createHash("sha256").update("senha123").digest("hex"),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+type UserRole = "admin" | "caixa";
 
 export function userStore() {
-  const list = async () =>
-    memoryUsers.map(({ passwordHash, ...rest }) => ({
-      ...rest,
-    }));
+  const db = getDb();
+
+  const list = async () => {
+    const rows = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        role: users.role,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(isNull(users.deletedAt))
+      .orderBy(users.name);
+
+    return rows;
+  };
 
   const add = async (input: {
     name: string;
     username: string;
-    role: "admin" | "caixa";
+    role: UserRole;
     password: string;
+    createdBy?: string;
   }) => {
-    const now = new Date();
-    const newUser: StoredUser = {
-      id: randomUUID(),
-      name: input.name,
-      username: input.username,
-      role: input.role,
-      passwordHash: createHash("sha256").update(input.password).digest("hex"),
-      createdAt: now,
-      updatedAt: now,
-    };
-    memoryUsers.push(newUser);
-    const { passwordHash, ...publicUser } = newUser;
-    return publicUser;
+    const id = generateShortId();
+    const passwordHash = await hash(input.password, 10);
+    const createdBy = input.createdBy ?? SEED_ADMIN_ID;
+    try {
+      const [created] = await db
+        .insert(users)
+        .values({
+          id,
+          name: input.name,
+          username: input.username,
+          role: input.role,
+          passwordHash,
+          createdBy,
+        })
+        .returning({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          role: users.role,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        });
+      return created;
+    } catch (error) {
+      const message =
+        error instanceof Error && "code" in error && (error as any).code === "23505"
+          ? "Login já está em uso."
+          : "Erro ao salvar usuário.";
+      throw new Error(message);
+    }
   };
 
   const update = async (input: {
     id: string;
     name: string;
     username: string;
-    role: "admin" | "caixa";
+    role: UserRole;
     password?: string;
   }) => {
-    const index = memoryUsers.findIndex((user) => user.id === input.id);
-    if (index === -1) {
-      return null;
-    }
-
-    const current = memoryUsers[index];
-    const passwordHash =
-      input.password && input.password.length > 0
-        ? createHash("sha256").update(input.password).digest("hex")
-        : current.passwordHash;
-
-    const updated: StoredUser = {
-      ...current,
+    const updates: Record<string, unknown> = {
       name: input.name,
       username: input.username,
       role: input.role,
-      passwordHash,
       updatedAt: new Date(),
     };
 
-    memoryUsers[index] = updated;
-    const { passwordHash: _, ...publicUser } = updated;
-    return publicUser;
+    if (input.password && input.password.length > 0) {
+      updates.passwordHash = await hash(input.password, 10);
+    }
+
+    try {
+      const [updated] = await db
+        .update(users)
+        .set(updates)
+        .where(and(eq(users.id, input.id), isNull(users.deletedAt)))
+        .returning({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          role: users.role,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        });
+
+      if (!updated) {
+        throw new Error("Usuário não encontrado.");
+      }
+
+      return updated;
+    } catch (error) {
+      const message =
+        error instanceof Error && "code" in error && (error as any).code === "23505"
+          ? "Login já está em uso."
+          : error instanceof Error
+            ? error.message
+            : "Erro ao atualizar usuário.";
+      throw new Error(message);
+    }
   };
 
   const remove = async (id: string) => {
-    const index = memoryUsers.findIndex((user) => user.id === id);
-    if (index === -1) {
-      return false;
+    const now = new Date();
+    const [existing] = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        deletedAt: users.deletedAt,
+      })
+      .from(users)
+      .where(eq(users.id, id));
+
+    if (!existing || existing.deletedAt) {
+      throw new Error("Usuário não encontrado.");
     }
-    memoryUsers.splice(index, 1);
+
+    const newUsername = `${existing.username}__${now.getTime()}`;
+
+    await db
+      .update(users)
+      .set({
+        deletedAt: now,
+        updatedAt: now,
+        username: newUsername,
+      })
+      .where(eq(users.id, id));
+
     return true;
   };
 

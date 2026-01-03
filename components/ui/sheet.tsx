@@ -6,10 +6,20 @@ type SheetProps = {
   onOpenChange: (open: boolean) => void;
   title?: string;
   children: React.ReactNode;
+  className?: string;
 };
 
-export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
+export function Sheet({
+  open,
+  onOpenChange,
+  title,
+  children,
+  className,
+}: SheetProps) {
   const ref = React.useRef<HTMLDivElement>(null);
+  const [animateIn, setAnimateIn] = React.useState(false);
+  const [visible, setVisible] = React.useState(open);
+  const transitionMs = 300;
 
   React.useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -29,7 +39,18 @@ export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
     }
   }, [open]);
 
-  if (!open) {
+  React.useEffect(() => {
+    if (open) {
+      setVisible(true);
+      const id = setTimeout(() => setAnimateIn(true), 20);
+      return () => clearTimeout(id);
+    }
+    const timeout = setTimeout(() => setVisible(false), transitionMs);
+    setAnimateIn(false);
+    return () => clearTimeout(timeout);
+  }, [open]);
+
+  if (!visible) {
     return null;
   }
 
@@ -49,7 +70,9 @@ export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
         ref={ref}
         tabIndex={-1}
         className={cn(
-          "relative ml-auto flex h-full w-80 max-w-full flex-col bg-surface-light shadow-xl transition-transform dark:bg-surface-dark"
+          "relative ml-auto flex h-full w-80 max-w-full flex-col bg-surface-light shadow-xl transition-transform duration-300 ease-out dark:bg-surface-dark",
+          animateIn ? "translate-x-0" : "translate-x-full",
+          className
         )}
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3 dark:border-[#452b4d]">

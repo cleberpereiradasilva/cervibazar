@@ -7,13 +7,8 @@ export async function deleteUser(userId: string) {
   const schema = z
     .string()
     .trim()
-    .uuid({ message: "ID de usuário inválido." });
+    .min(6, { message: "ID de usuário inválido." });
 
   const id = schema.parse(userId);
-  const removed = await userStore().remove(id);
-  if (!removed) {
-    throw new Error("Usuário não encontrado.");
-  }
-
-  return true;
+  return userStore().remove(id);
 }

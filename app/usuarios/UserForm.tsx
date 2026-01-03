@@ -253,7 +253,7 @@ export default function UserForm({
         </h3>
       </div>
 
-      <form className="grid gap-6 md:grid-cols-2" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div>
             <Label className="mb-2 ml-1 block" htmlFor="name">
@@ -343,9 +343,6 @@ export default function UserForm({
               </p>
             )}
           </div>
-        </div>
-
-        <div className="space-y-4">
           <div>
             <Label className="mb-2 ml-1 block" htmlFor="password">
               Senha
@@ -452,35 +449,33 @@ export default function UserForm({
             </p>
           )}
 
-          <div className="flex flex-col gap-2 pt-2 md:items-end">
-            <div className="flex w-full flex-col gap-2 md:flex-row md:justify-end">
-              <Button
-                className="gap-2"
-                type="submit"
-                disabled={saving}
-                tabIndex={0}
-              >
-                <Save className="h-5 w-5" />
-                {saving
-                  ? "Salvando..."
-                  : editingUser
-                    ? "Atualizar"
-                    : "Salvar"}
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 border border-[#e6e1e8] dark:border-[#452b4d]"
-                type="button"
-                onClick={() => {
-                  resetForm();
-                  onCancelEdit();
-                }}
-                disabled={saving}
-                tabIndex={0}
-              >
-                Cancelar
-              </Button>
-            </div>
+          <div className="flex flex-col gap-2 pt-2 md:flex-row md:justify-end">
+            <Button
+              className="gap-2"
+              type="submit"
+              disabled={saving}
+              tabIndex={0}
+            >
+              <Save className="h-5 w-5" />
+              {saving
+                ? "Salvando..."
+                : editingUser
+                  ? "Atualizar"
+                  : "Salvar"}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border border-[#e6e1e8] dark:border-[#452b4d]"
+              type="button"
+              onClick={() => {
+                resetForm();
+                onCancelEdit();
+              }}
+              disabled={saving}
+              tabIndex={0}
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       </form>

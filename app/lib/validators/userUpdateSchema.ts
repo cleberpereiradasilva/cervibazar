@@ -17,7 +17,7 @@ export function userUpdateSchema() {
 
   return z
     .object({
-      id: z.string().uuid("ID invalido."),
+      id: z.string().min(6, "ID invalido."),
       name: z
         .string()
         .trim()
