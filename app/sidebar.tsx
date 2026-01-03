@@ -17,6 +17,7 @@ import {
   PanelLeft,
   UserCog,
   UserRound,
+  Users,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -46,6 +47,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const adminNavigation: NavItem[] = [
     { label: "Relatórios de Vendas", icon: BarChart3, href: "#" },
+    { label: "Clientes", icon: Users, href: "/clientes" },
     { label: "Gerenciamento de Usuários", icon: UserCog, href: "/usuarios" },
     { label: "Motivos de Sangria", icon: NotebookPen, href: "#" },
   ];
