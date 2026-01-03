@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useState } from "react";
 
 type ClienteTableProps = {
   clients: PublicClient[];
@@ -42,6 +44,19 @@ export default function ClienteTable({
   onDelete,
   onEdit,
 }: ClienteTableProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!selectedId) return;
+    setDeleting(true);
+    await onDelete(selectedId);
+    setDeleting(false);
+    setSelectedId(null);
+    setConfirmOpen(false);
+  };
+
   return (
     <section className="space-y-4">
       <Card className="p-0">
@@ -126,7 +141,10 @@ export default function ClienteTable({
                         className="h-9 w-9 p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         title="Excluir"
                         aria-label={`Excluir ${client.name}`}
-                        onClick={() => onDelete(client.id)}
+                        onClick={() => {
+                          setSelectedId(client.id);
+                          setConfirmOpen(true);
+                        }}
                         tabIndex={0}
                       >
                         <Trash2 className="h-5 w-5" />
@@ -138,6 +156,19 @@ export default function ClienteTable({
           </TableBody>
         </Table>
       </Card>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Remover cliente"
+        description="Tem certeza que deseja remover este cliente?"
+        confirmLabel="Deletar"
+        confirmTone="danger"
+        loading={deleting}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setSelectedId(null);
+        }}
+        onConfirm={handleDelete}
+      />
     </section>
   );
 }

@@ -1,35 +1,33 @@
 "use client";
 
-import { useUsers } from "@/app/hooks/useUsers";
-import UserForm from "./UserForm";
-import UserTable from "./UserTable";
-import type { PublicUser } from "@/app/hooks/useUsers";
-import { useState } from "react";
-import { Button } from "../../components/ui/button";
-import { Sheet } from "../../components/ui/sheet";
-import { Card } from "../../components/ui/card";
-import { Separator } from "../../components/ui/separator";
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Sheet } from "@/components/ui/sheet";
 import { Toaster, toast } from "sonner";
+import SangriaForm from "./SangriaForm";
+import SangriaTable from "./SangriaTable";
+import { useSangrias, type SangriaEntry } from "@/app/hooks/useSangrias";
+import { useSangriaReasons } from "@/app/hooks/useSangriaReasons";
 
-export default function UsuariosClientPage() {
-  const { users, loading, saving, error, stats, create, remove, update } =
-    useUsers();
-  const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
+export default function SangriasClientPage() {
+  const { entries, loading, saving, error, stats, create, update, remove } = useSangrias();
+  const { reasons } = useSangriaReasons();
+  const [editing, setEditing] = useState<SangriaEntry | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
   const handleSubmit = async (input: {
-    name: string;
-    username: string;
-    password: string;
-    confirmPassword: string;
-    role: "admin" | "caixa";
+    reasonId: string;
+    amount: string;
+    observation?: string;
   }) => {
-    if (editingUser) {
-      const result = await update(editingUser.id, input);
+    if (editing) {
+      const result = await update(editing.id, input);
       if (result.ok) {
-        setEditingUser(null);
+        setEditing(null);
         setFormOpen(false);
-        toast.success("Usuário atualizado com sucesso.");
+        toast.success("Sangria atualizada com sucesso.");
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -39,7 +37,7 @@ export default function UsuariosClientPage() {
     const created = await create(input);
     if (created.ok) {
       setFormOpen(false);
-      toast.success("Usuário criado com sucesso.");
+      toast.success("Sangria registrada com sucesso.");
     } else if (created.error) {
       toast.error(created.error);
     }
@@ -49,12 +47,19 @@ export default function UsuariosClientPage() {
   const handleDelete = async (id: string) => {
     const result = await remove(id);
     if (result.ok) {
-      toast.success("Usuário removido com sucesso.");
+      toast.success("Sangria removida com sucesso.");
     } else if (result.error) {
       toast.error(result.error);
     }
     return result;
   };
+
+  const totalValue = useMemo(() => {
+    return entries.reduce((sum, entry) => {
+      const num = Number(entry.amount);
+      return sum + (Number.isNaN(num) ? 0 : num);
+    }, 0);
+  }, [entries]);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -62,32 +67,29 @@ export default function UsuariosClientPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-text-main dark:text-white md:text-4xl">
-            Gerenciar Usuários
+            Sangrias de Caixa
           </h2>
           <p className="mt-1 text-text-secondary dark:text-[#bcaec4]">
-            Cadastre e controle o acesso dos operadores ao sistema.
+            Registre saídas de caixa com motivo e valor.
           </p>
         </div>
         <div className="flex flex-col items-end gap-3 text-sm text-text-secondary">
           <div className="flex gap-3">
             <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
-              {stats.admins} Admin
+              {stats.total} lançamentos
             </span>
             <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
-              {stats.operators} Operador
-            </span>
-            <span className="rounded-full bg-accent/10 px-3 py-1 font-semibold text-accent">
-              {stats.total} Total
+              Total {totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </span>
           </div>
           <Button
             className="gap-2"
             onClick={() => {
-              setEditingUser(null);
+              setEditing(null);
               setFormOpen(true);
             }}
           >
-            Novo Usuário
+            Nova Sangria
           </Button>
         </div>
       </div>
@@ -100,28 +102,26 @@ export default function UsuariosClientPage() {
 
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-text-secondary">
-            Usuários cadastrados
-          </p>
+          <p className="text-sm font-semibold text-text-secondary">Sangrias registradas</p>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => {
-              setEditingUser(null);
+              setEditing(null);
               setFormOpen(true);
             }}
           >
-            Novo Usuário
+            Nova Sangria
           </Button>
         </div>
         <Separator className="my-3" />
-        <UserTable
-          users={users}
+        <SangriaTable
+          entries={entries}
           loading={loading}
           onDelete={handleDelete}
-          onEdit={(user) => {
-            setEditingUser(user);
+          onEdit={(entry) => {
+            setEditing(entry);
             setFormOpen(true);
           }}
         />
@@ -131,21 +131,21 @@ export default function UsuariosClientPage() {
         open={formOpen}
         onOpenChange={(isOpen) => {
           setFormOpen(isOpen);
-          if (!isOpen) setEditingUser(null);
+          if (!isOpen) setEditing(null);
         }}
-        title={editingUser ? "Editar Usuário" : "Novo Usuário"}
+        title={editing ? "Editar Sangria" : "Nova Sangria"}
         className="w-full max-w-xl"
       >
         <div className="p-6">
-          <UserForm
+          <SangriaForm
+            reasons={reasons}
             onSubmit={handleSubmit}
-            onCancelEdit={() => {
-              setEditingUser(null);
+            onCancel={() => {
+              setEditing(null);
               setFormOpen(false);
             }}
-            editingUser={editingUser}
+            editing={editing}
             saving={saving}
-            error={error}
           />
         </div>
       </Sheet>

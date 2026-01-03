@@ -1,45 +1,38 @@
 "use client";
 
-import { useUsers } from "@/app/hooks/useUsers";
-import UserForm from "./UserForm";
-import UserTable from "./UserTable";
-import type { PublicUser } from "@/app/hooks/useUsers";
 import { useState } from "react";
-import { Button } from "../../components/ui/button";
-import { Sheet } from "../../components/ui/sheet";
-import { Card } from "../../components/ui/card";
-import { Separator } from "../../components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Sheet } from "@/components/ui/sheet";
 import { Toaster, toast } from "sonner";
+import { useSangriaReasons, type SangriaReason } from "@/app/hooks/useSangriaReasons";
+import ReasonForm from "./ReasonForm";
+import ReasonTable from "./ReasonTable";
 
-export default function UsuariosClientPage() {
-  const { users, loading, saving, error, stats, create, remove, update } =
-    useUsers();
-  const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
+export default function MotivosClientPage() {
+  const { reasons, loading, saving, error, stats, create, update, remove } =
+    useSangriaReasons();
+  const [editing, setEditing] = useState<SangriaReason | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
-  const handleSubmit = async (input: {
-    name: string;
-    username: string;
-    password: string;
-    confirmPassword: string;
-    role: "admin" | "caixa";
-  }) => {
-    if (editingUser) {
-      const result = await update(editingUser.id, input);
+  const handleSubmit = async (input: { name: string }) => {
+    if (editing) {
+      const result = await update(editing.id, input.name);
       if (result.ok) {
-        setEditingUser(null);
+        setEditing(null);
         setFormOpen(false);
-        toast.success("Usuário atualizado com sucesso.");
+        toast.success("Dados enviados com sucesso.");
       } else if (result.error) {
         toast.error(result.error);
       }
       return result;
     }
 
-    const created = await create(input);
+    const created = await create(input.name);
     if (created.ok) {
       setFormOpen(false);
-      toast.success("Usuário criado com sucesso.");
+      toast.success("Dados enviados com sucesso.");
     } else if (created.error) {
       toast.error(created.error);
     }
@@ -49,7 +42,7 @@ export default function UsuariosClientPage() {
   const handleDelete = async (id: string) => {
     const result = await remove(id);
     if (result.ok) {
-      toast.success("Usuário removido com sucesso.");
+      toast.success("Motivo removido com sucesso.");
     } else if (result.error) {
       toast.error(result.error);
     }
@@ -57,37 +50,31 @@ export default function UsuariosClientPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
       <Toaster position="top-right" richColors />
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-text-main dark:text-white md:text-4xl">
-            Gerenciar Usuários
+            Motivos de Sangria
           </h2>
           <p className="mt-1 text-text-secondary dark:text-[#bcaec4]">
-            Cadastre e controle o acesso dos operadores ao sistema.
+            Cadastre os motivos para registrar sangrias de caixa.
           </p>
         </div>
         <div className="flex flex-col items-end gap-3 text-sm text-text-secondary">
           <div className="flex gap-3">
             <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
-              {stats.admins} Admin
-            </span>
-            <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
-              {stats.operators} Operador
-            </span>
-            <span className="rounded-full bg-accent/10 px-3 py-1 font-semibold text-accent">
-              {stats.total} Total
+              {stats.total} Motivos
             </span>
           </div>
           <Button
             className="gap-2"
             onClick={() => {
-              setEditingUser(null);
+              setEditing(null);
               setFormOpen(true);
             }}
           >
-            Novo Usuário
+            Novo Motivo
           </Button>
         </div>
       </div>
@@ -100,28 +87,26 @@ export default function UsuariosClientPage() {
 
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-text-secondary">
-            Usuários cadastrados
-          </p>
+          <p className="text-sm font-semibold text-text-secondary">Motivos cadastrados</p>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => {
-              setEditingUser(null);
+              setEditing(null);
               setFormOpen(true);
             }}
           >
-            Novo Usuário
+            Novo Motivo
           </Button>
         </div>
         <Separator className="my-3" />
-        <UserTable
-          users={users}
+        <ReasonTable
+          reasons={reasons}
           loading={loading}
           onDelete={handleDelete}
-          onEdit={(user) => {
-            setEditingUser(user);
+          onEdit={(reason) => {
+            setEditing(reason);
             setFormOpen(true);
           }}
         />
@@ -131,21 +116,20 @@ export default function UsuariosClientPage() {
         open={formOpen}
         onOpenChange={(isOpen) => {
           setFormOpen(isOpen);
-          if (!isOpen) setEditingUser(null);
+          if (!isOpen) setEditing(null);
         }}
-        title={editingUser ? "Editar Usuário" : "Novo Usuário"}
-        className="w-full max-w-xl"
+        title={editing ? "Editar Motivo" : "Novo Motivo"}
+        className="w-full max-w-md"
       >
         <div className="p-6">
-          <UserForm
+          <ReasonForm
             onSubmit={handleSubmit}
-            onCancelEdit={() => {
-              setEditingUser(null);
+            onCancel={() => {
+              setEditing(null);
               setFormOpen(false);
             }}
-            editingUser={editingUser}
+            editingReason={editing}
             saving={saving}
-            error={error}
           />
         </div>
       </Sheet>

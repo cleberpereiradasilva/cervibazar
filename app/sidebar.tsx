@@ -18,6 +18,7 @@ import {
   UserCog,
   UserRound,
   Users,
+  WalletMinimal,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -42,14 +43,14 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     { label: "Frente de Caixa", icon: HandCoins, href: "#" },
     { label: "Abertura de Caixa", icon: LockOpen, href: "#", active: true },
     { label: "Fechamento de Caixa", icon: Lock, href: "#" },
-    { label: "Sangria de Caixa", icon: CircleMinus, href: "#" },
+    { label: "Sangria de Caixa", icon: WalletMinimal, href: "/sangrias" },
   ];
 
   const adminNavigation: NavItem[] = [
     { label: "Relatórios de Vendas", icon: BarChart3, href: "#" },
     { label: "Clientes", icon: Users, href: "/clientes" },
     { label: "Gerenciamento de Usuários", icon: UserCog, href: "/usuarios" },
-    { label: "Motivos de Sangria", icon: NotebookPen, href: "#" },
+    { label: "Motivos de Sangria", icon: NotebookPen, href: "/motivos" },
   ];
 
   const [mobileOpen, setMobileOpen] = useState(false);
