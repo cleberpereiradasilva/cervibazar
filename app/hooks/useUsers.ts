@@ -5,6 +5,7 @@ import { createUser } from "@/app/actions/users/createUser";
 import { deleteUser } from "@/app/actions/users/deleteUser";
 import { listUsers } from "@/app/actions/users/listUsers";
 import { updateUser } from "@/app/actions/users/updateUser";
+import { getClientToken } from "@/app/lib/auth/getClientToken";
 
 export type PublicUser = {
   id: string;
@@ -41,7 +42,11 @@ export function useUsers() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listUsers();
+      const token = getClientToken();
+      if (!token) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+      const data = await listUsers(token);
       setUsers(data);
     } catch (err) {
       setError(
@@ -61,7 +66,11 @@ export function useUsers() {
       setSaving(true);
       setError(null);
       try {
-        const created = await createUser(input);
+        const token = getClientToken();
+        if (!token) {
+          throw new Error("Sessão expirada. Faça login novamente.");
+        }
+        const created = await createUser(token, input);
         setUsers((prev) => [...prev, created]);
         return { ok: true, error: null };
       } catch (err) {
@@ -79,7 +88,11 @@ export function useUsers() {
   const handleDelete = useCallback(async (id: string) => {
     setError(null);
     try {
-      await deleteUser(id);
+      const token = getClientToken();
+      if (!token) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+      await deleteUser(token, id);
       setUsers((prev) => prev.filter((user) => user.id !== id));
       return { ok: true, error: null };
     } catch (err) {
@@ -107,7 +120,11 @@ export function useUsers() {
       setSaving(true);
       setError(null);
       try {
-        const updated = await updateUser({ id, ...input });
+        const token = getClientToken();
+        if (!token) {
+          throw new Error("Sessão expirada. Faça login novamente.");
+        }
+        const updated = await updateUser(token, { id, ...input });
         setUsers((prev) =>
           prev.map((user) => (user.id === id ? { ...user, ...updated } : user))
         );

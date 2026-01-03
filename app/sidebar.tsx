@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -35,6 +36,7 @@ type NavItem = {
 };
 
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
+  const router = useRouter();
   const mainNavigation: NavItem[] = [
     { label: "Frente de Caixa", icon: HandCoins, href: "#" },
     { label: "Abertura de Caixa", icon: LockOpen, href: "#", active: true },
@@ -50,6 +52,13 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const handleLogout = () => {
+    document.cookie = `auth_token=; path=/; max-age=0; SameSite=Lax; ${
+      process.env.NODE_ENV === "production" ? "Secure;" : ""
+    }`;
+    router.push("/login");
+  };
 
   const SidebarContent = (
     <div className="flex h-full flex-col">
@@ -104,6 +113,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           className={`w-full justify-center gap-2 border border-[#e6e1e8] text-text-secondary hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-[#452b4d] dark:hover:bg-red-900/20 dark:hover:text-red-400 ${collapsed ? "px-2" : ""}`}
           tabIndex={0}
           aria-label="Sair do Sistema"
+          onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
           {!collapsed && "Sair do Sistema"}
