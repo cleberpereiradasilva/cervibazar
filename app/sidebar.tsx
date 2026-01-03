@@ -34,7 +34,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const adminNavigation: NavItem[] = [
     { label: "Relatórios de Vendas", icon: BarChart3, href: "#" },
-    { label: "Gerenciamento de Usuários", icon: UserCog, href: "#" },
+    { label: "Gerenciamento de Usuários", icon: UserCog, href: "/usuarios" },
     { label: "Motivos de Sangria", icon: NotebookPen, href: "#" },
   ];
 

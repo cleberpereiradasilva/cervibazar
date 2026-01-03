@@ -1,0 +1,496 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  AtSign,
+  BadgeCheck,
+  Eye,
+  EyeOff,
+  Info,
+  Lock,
+  LockKeyhole,
+  Save,
+  UserPlus,
+} from "lucide-react";
+import { userInputSchema } from "@/app/lib/validators/userInputSchema";
+import { userUpdateSchema } from "@/app/lib/validators/userUpdateSchema";
+import { z } from "zod";
+
+const nameSchema = z
+  .string()
+  .trim()
+  .min(5, "Nome e sobrenome devem ter pelo menos 5 caracteres.")
+  .max(120, "Nome e sobrenome devem ter no maximo 120 caracteres.")
+  .regex(/^[A-Za-z]+(?:\s+[A-Za-z]+)+$/, "Informe nome e sobrenome (apenas letras e espacos).");
+
+const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(5, "Login deve ter pelo menos 5 caracteres.")
+  .max(50, "Login deve ter no maximo 50 caracteres.")
+  .regex(/^[a-z]+\.[a-z]+$/, "Use o formato nome.sobrenome apenas com letras.");
+
+const roleSchema = z.enum(["admin", "caixa"], {
+  errorMap: () => ({ message: "Selecione um perfil valido." }),
+});
+
+const passwordSchema = z
+  .string()
+  .min(8, "Senha deve ter pelo menos 8 caracteres.")
+  .max(64, "Senha deve ter no maximo 64 caracteres.")
+  .regex(/[A-Z]/, "Senha deve ter pelo menos uma letra maiuscula.")
+  .regex(/[0-9]/, "Senha deve ter pelo menos um numero.");
+
+type UserFormProps = {
+  onSubmit: (input: {
+    name: string;
+    username: string;
+    password: string;
+    confirmPassword: string;
+    role: "admin" | "caixa";
+  }) => Promise<{ ok: boolean; error: string | null }>;
+  onCancelEdit: () => void;
+  editingUser?: {
+    id: string;
+    name: string;
+    username: string;
+    role: "admin" | "caixa";
+  } | null;
+  saving: boolean;
+  error?: string | null;
+};
+
+export default function UserForm({
+  onSubmit,
+  onCancelEdit,
+  editingUser,
+  saving,
+  error,
+}: UserFormProps) {
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "caixa" | "">("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<
+      Record<
+        | keyof Omit<
+            UserFormProps["onSubmit"] extends (input: infer T) => any
+              ? T
+              : never,
+            "role"
+          >
+        | "role",
+        string
+      >
+    >
+  >({});
+  const [touched, setTouched] = useState<
+    Partial<Record<"name" | "username" | "password" | "confirmPassword" | "role", boolean>>
+  >({});
+
+  const schema = useMemo(
+    () => (editingUser ? userUpdateSchema() : userInputSchema()),
+    [editingUser]
+  );
+
+  type FieldKey = "name" | "username" | "password" | "confirmPassword" | "role";
+
+  const validateField = (field: FieldKey, overrides?: Partial<Record<FieldKey, string>>) => {
+    const current = {
+      name,
+      username,
+      password,
+      confirmPassword,
+      role,
+      ...overrides,
+    };
+
+    if (field === "name") {
+      const parsed = nameSchema.safeParse(current.name);
+      setFieldErrors((prev) => ({
+        ...prev,
+        name: parsed.success ? undefined : parsed.error.flatten().fieldErrors.name?.[0] ?? "Nome invalido.",
+      }));
+      return;
+    }
+
+    if (field === "username") {
+      const parsed = usernameSchema.safeParse(current.username);
+      setFieldErrors((prev) => ({
+        ...prev,
+        username: parsed.success ? undefined : parsed.error.flatten().fieldErrors.username?.[0] ?? "Login invalido.",
+      }));
+      return;
+    }
+
+    if (field === "password") {
+      const parsed =
+        editingUser && current.password.length === 0
+          ? { success: true }
+          : passwordSchema.safeParse(current.password);
+      setFieldErrors((prev) => ({
+        ...prev,
+        password: parsed.success ? undefined : ("error" in parsed ? parsed.error.issues[0]?.message ?? "Senha invalida." : "Senha invalida."),
+      }));
+      return;
+    }
+
+    if (field === "confirmPassword") {
+      const passwordProvided = current.password.length > 0;
+      const parsed =
+        editingUser && !passwordProvided && current.confirmPassword.length === 0
+          ? { success: true }
+          : passwordSchema.safeParse(current.confirmPassword);
+
+      const lengthMessage =
+        parsed.success === false ? parsed.error.issues[0]?.message : undefined;
+
+      const emptyConfirmMessage =
+        passwordProvided && current.confirmPassword.length === 0
+          ? "Confirme a senha."
+          : undefined;
+
+      const mismatchMessage =
+        passwordProvided &&
+        current.confirmPassword.length > 0 &&
+        current.password !== current.confirmPassword
+          ? "As senhas precisam ser iguais."
+          : undefined;
+
+      setFieldErrors((prev) => ({
+        ...prev,
+        confirmPassword:
+          emptyConfirmMessage || lengthMessage || mismatchMessage || undefined,
+      }));
+      return;
+    }
+
+    const parsed = roleSchema.safeParse(current.role);
+    setFieldErrors((prev) => ({
+      ...prev,
+      role: parsed.success ? undefined : parsed.error.flatten().fieldErrors.role?.[0] ?? "Perfil invalido.",
+    }));
+  };
+
+  const resetForm = () => {
+    setName("");
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
+    setRole("");
+    setFeedback(null);
+    setFieldErrors({});
+    setTouched({});
+  };
+
+  useEffect(() => {
+    if (editingUser) {
+      setName(editingUser.name);
+      setUsername(editingUser.username);
+      setRole(editingUser.role);
+      setPassword("");
+      setConfirmPassword("");
+      setFieldErrors({});
+      setFeedback(null);
+      setTouched({});
+    } else {
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingUser?.id]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFeedback(null);
+    setFieldErrors({});
+    const basePayload = {
+      name,
+      username,
+      password,
+      confirmPassword,
+      role,
+      id: editingUser?.id,
+    };
+
+    const parseResult = editingUser
+      ? userUpdateSchema().safeParse(basePayload)
+      : userInputSchema().safeParse(basePayload);
+
+    if (!parseResult.success) {
+      const { fieldErrors: issues, formErrors } = parseResult.error.flatten();
+      setFieldErrors({
+        name: issues.name?.[0],
+        username: issues.username?.[0],
+        password: issues.password?.[0],
+        confirmPassword: issues.confirmPassword?.[0] ?? formErrors[0],
+        role: issues.role?.[0],
+      });
+      setFeedback(null);
+      return;
+    }
+
+    const result = await onSubmit(parseResult.data);
+
+    if (result.ok) {
+      setFeedback("Usuário salvo com sucesso.");
+      resetForm();
+      onCancelEdit();
+      return;
+    }
+
+    if (result.error) {
+      setFeedback(result.error);
+    }
+  };
+
+  return (
+    <section className="rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark">
+      <div className="mb-6 flex items-center gap-2 border-b border-[#e6e1e8] pb-4 text-text-main dark:border-[#452b4d] dark:text-white">
+        <UserPlus className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-bold">
+          {editingUser ? "Editar Usuário" : "Dados do Usuário"}
+        </h3>
+      </div>
+
+      <form className="grid gap-6 md:grid-cols-2" onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+              Nome Completo
+            </label>
+            <div className="group relative">
+              <BadgeCheck className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+              <input
+                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-4 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+                placeholder="Nome e sobrenome"
+                type="text"
+                value={name}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setName(value);
+                  setTouched((prev) => ({ ...prev, name: true }));
+                  validateField("name", { name: value });
+                }}
+                onBlur={() => touched.name && validateField("name")}
+              />
+            </div>
+            {fieldErrors.name && (
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
+                <Info className="h-4 w-4" />
+                {fieldErrors.name}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+              Login de Acesso
+            </label>
+            <div className="group relative">
+              <AtSign className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+              <input
+                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-4 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+                placeholder="nome.sobrenome"
+                type="text"
+                value={username}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setUsername(value);
+                  setTouched((prev) => ({ ...prev, username: true }));
+                  validateField("username", { username: value });
+                }}
+                onBlur={() => touched.username && validateField("username")}
+              />
+            </div>
+            <p className="ml-1 mt-1 text-xs text-text-secondary/60">
+              Formato exigido: nome.sobrenome
+            </p>
+            {fieldErrors.username && (
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
+                <Info className="h-4 w-4" />
+                {fieldErrors.username}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+              Perfil
+            </label>
+            <div className="group relative">
+              <BadgeCheck className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+              <select
+                className="h-12 w-full cursor-pointer appearance-none rounded-2xl border-transparent bg-background-light pl-12 pr-10 text-text-main transition-all focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+                value={role}
+                onChange={(event) => {
+                  const value = event.target.value as "admin" | "caixa" | "";
+                  setRole(value);
+                  setTouched((prev) => ({ ...prev, role: true }));
+                  validateField("role", { role: value });
+                }}
+                onBlur={() => touched.role && validateField("role")}
+              >
+                <option value="">Selecione um perfil</option>
+                <option value="admin">Administrador</option>
+                <option value="caixa">Operador de Caixa</option>
+              </select>
+              <svg
+                className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="m19 9-7 7-7-7"
+                />
+              </svg>
+            </div>
+            {fieldErrors.role && (
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
+                <Info className="h-4 w-4" />
+                {fieldErrors.role}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+              Senha
+            </label>
+            <div className="group relative">
+              <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+              <input
+                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-12 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+                placeholder="••••••••"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setPassword(value);
+                  setTouched((prev) => ({ ...prev, password: true }));
+                  validateField("password", { password: value });
+                  if (touched.confirmPassword) {
+                    validateField("confirmPassword", {
+                      password: value,
+                      confirmPassword,
+                    });
+                  }
+                }}
+                onBlur={() => touched.password && validateField("password")}
+              />
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary focus:outline-none"
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+            {fieldErrors.password && (
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
+                <Info className="h-4 w-4" />
+                {fieldErrors.password}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 ml-1 block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+              Confirmação de Senha
+            </label>
+            <div className="group relative">
+              <LockKeyhole className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+              <input
+                className="h-12 w-full rounded-2xl border-transparent bg-background-light pl-12 pr-12 text-text-main transition-all placeholder:text-text-secondary/50 focus:border-primary focus:ring-0 dark:bg-background-dark dark:text-white"
+                placeholder="••••••••"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setConfirmPassword(value);
+                  setTouched((prev) => ({ ...prev, confirmPassword: true }));
+                  validateField("confirmPassword", {
+                    password,
+                    confirmPassword: value,
+                  });
+                }}
+                onBlur={() =>
+                  touched.confirmPassword && validateField("confirmPassword")
+                }
+              />
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-primary focus:outline-none"
+                type="button"
+                onClick={() => setShowConfirmPassword((previous) => !previous)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+            <p className="ml-1 mt-1 text-xs text-text-secondary/60">
+              Minimo 8 caracteres, com maiuscula e numero.
+            </p>
+            {fieldErrors.confirmPassword && (
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
+                <Info className="h-4 w-4" />
+                {fieldErrors.confirmPassword}
+              </p>
+            )}
+          </div>
+
+          {(feedback || error) && (
+            <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+              {feedback || error}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2 md:items-end">
+            <div className="flex w-full flex-col gap-2 md:flex-row md:justify-end">
+              <button
+                className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-hover active:scale-[0.98]"
+                type="submit"
+                disabled={saving}
+              >
+                <Save className="h-5 w-5" />
+                {saving
+                  ? "Salvando..."
+                  : editingUser
+                    ? "Atualizar"
+                    : "Salvar"}
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 rounded-md border border-[#e6e1e8] px-4 py-2 text-sm font-bold text-text-secondary transition-all hover:bg-background-light dark:border-[#452b4d] dark:hover:bg-[#382240]"
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  onCancelEdit();
+                }}
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+  );
+}
