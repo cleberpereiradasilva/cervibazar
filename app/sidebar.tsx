@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -52,12 +52,13 @@ type NavItem = {
 
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user: currentUser } = useCurrentUser();
   const mainNavigation: NavItem[] = [
     { label: "Vendas", icon: ShoppingCartIcon, href: "/vendas" },
     { label: "Histórico", icon: History, href: "/historico" },
     { label: "Abertura de Caixa", icon: LockOpen, href: "/abertura" },
-    { label: "Fechamento de Caixa", icon: Lock, href: "#" },
+    { label: "Fechamento de Caixa", icon: Lock, href: "/fechamento" },
     { label: "Sangria de Caixa", icon: WalletMinimal, href: "/sangrias" },
   ];
 
@@ -94,21 +95,22 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </div>
       <ScrollArea className="flex-1 px-2 py-5">
         <nav className="space-y-2">
-          {mainNavigation.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              aria-label={item.label}
-              className={`group flex items-center gap-3 rounded-xl ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"} text-text-secondary transition-all hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-[#bcaec4] dark:hover:bg-[#452b4d] dark:hover:text-white ${
-                item.active
-                  ? "bg-primary/10 text-primary shadow-sm dark:text-white"
-                  : ""
-              }`}
-            >
-              <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
-              {!collapsed && <span className="text-sm font-bold">{item.label}</span>}
-            </Link>
-          ))}
+          {mainNavigation.map((item) => {
+            const isActive = item.href !== "#" && pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                aria-label={item.label}
+                className={`group flex items-center gap-3 rounded-xl ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"} text-text-secondary transition-all hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-[#bcaec4] dark:hover:bg-[#452b4d] dark:hover:text-white ${
+                  isActive ? "bg-primary/10 text-primary shadow-sm dark:text-white" : ""
+                }`}
+              >
+                <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                {!collapsed && <span className="text-sm font-bold">{item.label}</span>}
+              </Link>
+            );
+          })}
         </nav>
 
         <Separator className="my-4" />

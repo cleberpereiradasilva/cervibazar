@@ -4,6 +4,7 @@ import { getDb } from "../db/client";
 import { users } from "../db/schema/users";
 import { generateShortId } from "../id/generateShortId";
 import { SEED_ADMIN_ID } from "@/app/constants";
+import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 type UserRole = "admin" | "caixa";
 
@@ -37,6 +38,7 @@ export function userStore() {
     const id = generateShortId();
     const passwordHash = await hash(input.password, 10);
     const createdBy = input.createdBy ?? SEED_ADMIN_ID;
+    const createdAt = nowInSaoPaulo();
     try {
       const [created] = await db
         .insert(users)
@@ -47,6 +49,8 @@ export function userStore() {
           role: input.role,
           passwordHash,
           createdBy,
+          createdAt,
+          updatedAt: createdAt,
         })
         .returning({
           id: users.id,
@@ -73,11 +77,12 @@ export function userStore() {
     role: UserRole;
     password?: string;
   }) => {
+    const now = nowInSaoPaulo();
     const updates: Record<string, unknown> = {
       name: input.name,
       username: input.username,
       role: input.role,
-      updatedAt: new Date(),
+      updatedAt: now,
     };
 
     if (input.password && input.password.length > 0) {
@@ -115,7 +120,7 @@ export function userStore() {
   };
 
   const remove = async (id: string) => {
-    const now = new Date();
+    const now = nowInSaoPaulo();
     const [existing] = await db
       .select({
         id: users.id,

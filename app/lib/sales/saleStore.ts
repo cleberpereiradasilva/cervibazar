@@ -4,6 +4,7 @@ import { saleItems } from "../db/schema/saleItems";
 import { sales } from "../db/schema/sales";
 import { getDb } from "../db/client";
 import { generateShortId } from "../id/generateShortId";
+import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 type SaleItemInput = {
   categoryId: string;
@@ -72,17 +73,21 @@ export function saleStore() {
         }
 
         const newClientId = generateShortId();
+        const createdAt = nowInSaoPaulo();
         await tx.insert(clients).values({
           id: newClientId,
           name: input.customer.name.trim(),
           phone: normalizedPhone,
           birthday: new Date(input.customer.birthDate),
           createdBy: input.userId,
+          createdAt,
+          updatedAt: createdAt,
         });
         clientId = newClientId;
       }
 
       const saleId = generateShortId();
+      const createdAt = nowInSaoPaulo();
 
       await tx.insert(sales).values({
         id: saleId,
@@ -95,6 +100,8 @@ export function saleStore() {
         pixAmount: payments.pix.toFixed(2),
         changeAmount: changeAmount.toFixed(2),
         pendingAmount: pendingAmount.toFixed(2),
+        createdAt,
+        updatedAt: createdAt,
       });
 
       await tx.insert(saleItems).values(
@@ -105,6 +112,7 @@ export function saleStore() {
           quantity: item.quantity,
           unitPrice: item.price.toFixed(2),
           lineTotal: (item.quantity * item.price).toFixed(2),
+          createdAt,
         }))
       );
 

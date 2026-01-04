@@ -3,6 +3,7 @@ import { getDb } from "../db/client";
 import { cashOpenings } from "../db/schema/cashOpenings";
 import { generateShortId } from "../id/generateShortId";
 import { users } from "../db/schema/users";
+import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function cashOpeningStore() {
   const db = getDb();
@@ -24,12 +25,15 @@ export function cashOpeningStore() {
 
   const add = async (input: { amount: number; createdBy: string }) => {
     const id = generateShortId();
+    const createdAt = nowInSaoPaulo();
     const [created] = await db
       .insert(cashOpenings)
       .values({
         id,
         amount: input.amount,
         createdBy: input.createdBy,
+        createdAt,
+        updatedAt: createdAt,
       })
       .returning({
         id: cashOpenings.id,
@@ -41,11 +45,12 @@ export function cashOpeningStore() {
   };
 
   const update = async (input: { id: string; amount: number }) => {
+    const now = nowInSaoPaulo();
     const [updated] = await db
       .update(cashOpenings)
       .set({
         amount: input.amount,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(and(eq(cashOpenings.id, input.id), isNull(cashOpenings.deletedAt)))
       .returning({
@@ -63,7 +68,7 @@ export function cashOpeningStore() {
   };
 
   const remove = async (id: string) => {
-    const now = new Date();
+    const now = nowInSaoPaulo();
     const [existing] = await db
       .select({ id: cashOpenings.id, deletedAt: cashOpenings.deletedAt })
       .from(cashOpenings)

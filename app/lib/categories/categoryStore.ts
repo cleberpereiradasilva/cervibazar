@@ -2,6 +2,7 @@ import { and, eq, isNull, desc } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories } from "../db/schema/categories";
 import { generateShortId } from "../id/generateShortId";
+import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function categoryStore() {
   const db = getDb();
@@ -22,6 +23,7 @@ export function categoryStore() {
 
   const add = async (input: { name: string; icon: string; createdBy: string }) => {
     const id = generateShortId();
+    const createdAt = nowInSaoPaulo();
     const [created] = await db
       .insert(categories)
       .values({
@@ -29,6 +31,8 @@ export function categoryStore() {
         name: input.name,
         icon: input.icon,
         createdBy: input.createdBy,
+        createdAt,
+        updatedAt: createdAt,
       })
       .returning({
         id: categories.id,
@@ -41,12 +45,13 @@ export function categoryStore() {
   };
 
   const update = async (input: { id: string; name: string; icon: string }) => {
+    const now = nowInSaoPaulo();
     const [updated] = await db
       .update(categories)
       .set({
         name: input.name,
         icon: input.icon,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(and(eq(categories.id, input.id), isNull(categories.deletedAt)))
       .returning({
@@ -65,7 +70,7 @@ export function categoryStore() {
   };
 
   const remove = async (id: string) => {
-    const now = new Date();
+    const now = nowInSaoPaulo();
     const [existing] = await db
       .select({ id: categories.id, deletedAt: categories.deletedAt })
       .from(categories)

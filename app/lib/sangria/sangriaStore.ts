@@ -4,6 +4,7 @@ import { sangrias } from "../db/schema/sangrias";
 import { generateShortId } from "../id/generateShortId";
 import { sangriaReasons } from "../db/schema/sangriaReasons";
 import { users } from "../db/schema/users";
+import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function sangriaStore() {
   const db = getDb();
@@ -34,6 +35,7 @@ export function sangriaStore() {
     observation?: string;
   }) => {
     const id = generateShortId();
+    const createdAt = nowInSaoPaulo();
     const [created] = await db
       .insert(sangrias)
       .values({
@@ -42,6 +44,8 @@ export function sangriaStore() {
         amount: input.amount,
         createdBy: input.createdBy,
         observation: input.observation?.trim() ?? null,
+        createdAt,
+        updatedAt: createdAt,
       })
       .returning({
         id: sangrias.id,
@@ -60,13 +64,14 @@ export function sangriaStore() {
     amount: number;
     observation?: string;
   }) => {
+    const now = nowInSaoPaulo();
     const [updated] = await db
       .update(sangrias)
       .set({
         reasonId: input.reasonId,
         amount: input.amount,
         observation: input.observation?.trim() ?? null,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(and(eq(sangrias.id, input.id), isNull(sangrias.deletedAt)))
       .returning({
@@ -86,7 +91,7 @@ export function sangriaStore() {
   };
 
   const remove = async (id: string) => {
-    const now = new Date();
+    const now = nowInSaoPaulo();
     const [existing] = await db
       .select({
         id: sangrias.id,

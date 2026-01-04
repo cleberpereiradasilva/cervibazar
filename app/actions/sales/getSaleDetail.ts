@@ -8,6 +8,7 @@ import { saleItems } from "@/app/lib/db/schema/saleItems";
 import { clients } from "@/app/lib/db/schema/clients";
 import { users } from "@/app/lib/db/schema/users";
 import { categories } from "@/app/lib/db/schema/categories";
+import { sql } from "drizzle-orm";
 
 export type SaleDetail = {
   id: string;
@@ -46,7 +47,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
   const [sale] = await db
     .select({
       id: sales.id,
-      createdAt: sales.createdAt,
+      createdAt: sql<Date>`(${sales.createdAt} at time zone 'America/Sao_Paulo')`,
       totalAmount: sales.totalAmount,
       creditAmount: sales.creditAmount,
       debitAmount: sales.debitAmount,
