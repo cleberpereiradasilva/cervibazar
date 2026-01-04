@@ -275,6 +275,12 @@ export default function FechamentoDetalhePage() {
                 <span className="text-xl font-bold">{resumo?.totalVendas ?? "-"}</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/20 pb-3">
+                <span className="font-medium text-white/80">Troco</span>
+                <span className="text-xl font-bold">
+                  {detail ? `- ${formatCurrency(detail.change)}` : "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-white/20 pb-3">
                 <span className="font-medium text-white/80">Total de Sangria</span>
                 <span className="text-xl font-bold">
                   {detail ? formatCurrency(detail.sangriaTotal) : "-"}
@@ -287,7 +293,17 @@ export default function FechamentoDetalhePage() {
             </div>
           </div>
         </section>
-        <div className="pb-4 pt-4">
+        <div className="space-y-4 pb-4 pt-4">
+          <div>
+            <label className="block text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+              Observações do Fechamento
+            </label>
+            <textarea
+              className="mt-2 w-full rounded-2xl border border-border bg-surface-light p-3 text-sm text-text-main shadow-sm focus:border-primary focus:outline-none dark:border-[#452b4d] dark:bg-surface-dark dark:text-white"
+              rows={3}
+              placeholder="Anote ajustes ou observações antes de fechar o caixa..."
+            />
+          </div>
           <Button className="flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-primary text-xl font-black text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-primary/40 active:translate-y-0">
             <Lucide.CheckCircle2 className="h-6 w-6" />
             Fechar Caixa

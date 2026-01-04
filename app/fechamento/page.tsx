@@ -89,11 +89,10 @@ export default function FechamentoPage() {
                 <tr className="border-b border-[#e6e1e8] bg-background-light text-xs font-bold uppercase tracking-wider text-text-secondary dark:border-[#452b4d] dark:bg-[#36203d] dark:text-[#bcaec4]">
                   <th className="whitespace-nowrap py-5 px-6">Status</th>
                   <th className="whitespace-nowrap py-5 px-6">Data</th>
-                  <th className="whitespace-nowrap py-5 px-6 text-center">Itens</th>
                   <th className="whitespace-nowrap py-5 px-6 text-right">Abertura</th>
-                  <th className="whitespace-nowrap py-5 px-6 text-right">Total Vendas</th>
                   <th className="whitespace-nowrap py-5 px-6 text-right">Troco</th>
                   <th className="whitespace-nowrap py-5 px-6 text-right">Sangria</th>
+                  <th className="whitespace-nowrap py-5 px-6 text-right">Total Vendas</th>
                   <th className="whitespace-nowrap py-5 px-6 text-right">Total do Dia</th>
                   <th className="whitespace-nowrap py-5 px-6 text-center">Ações</th>
                 </tr>
@@ -139,20 +138,17 @@ export default function FechamentoPage() {
                           <span className="block text-sm font-bold text-text-main dark:text-white">{row.dateLabel}</span>
                           <span className="text-xs capitalize text-text-secondary dark:text-[#bcaec4]">{row.weekday}</span>
                         </td>
-                        <td className="py-4 px-6 text-center text-sm font-medium text-text-main dark:text-white">
-                          {formatNumber(row.items)}
-                        </td>
                         <td className="py-4 px-6 text-right text-sm font-medium text-text-secondary dark:text-[#dcdfe4]">
                           {formatCurrency(row.opening)}
-                        </td>
-                        <td className="py-4 px-6 text-right text-lg font-bold text-primary dark:text-[#d9a3d7]">
-                          {formatCurrency(row.total)}
                         </td>
                         <td className="py-4 px-6 text-right text-sm font-medium text-text-main dark:text-white">
                           {formatCurrency(row.change)}
                         </td>
                         <td className="py-4 px-6 text-right text-sm font-medium text-text-main dark:text-white">
                           {formatCurrency(row.sangria)}
+                        </td>
+                        <td className="py-4 px-6 text-right text-lg font-bold text-primary dark:text-[#d9a3d7]">
+                          {formatCurrency(row.total)}
                         </td>
                         <td className="py-4 px-6 text-right text-lg font-black text-primary dark:text-[#d9a3d7]">
                           {formatCurrency(row.netTotal)}
