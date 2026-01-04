@@ -22,6 +22,7 @@ type LineItem = {
 type Customer = {
   name: string;
   phone: string;
+  birthDate: string;
 };
 
 type PaymentMethod = "dinheiro" | "debito" | "credito" | "pix";
@@ -34,7 +35,7 @@ function getIcon(icon: string) {
 export default function SaleForm() {
   const { categories } = useCategories();
   const [items, setItems] = useState<LineItem[]>([]);
-  const [customer, setCustomer] = useState<Customer>({ name: "", phone: "" });
+  const [customer, setCustomer] = useState<Customer>({ name: "", phone: "", birthDate: "" });
   const [payments, setPayments] = useState<Record<PaymentMethod, number>>({
     dinheiro: 0,
     credito: 0,
@@ -82,9 +83,9 @@ export default function SaleForm() {
   };
 
   const resetForm = () => {
-    setCustomer({ name: "", phone: "" });
+    setCustomer({ name: "", phone: "", birthDate: "" });
     setItems((prev) => prev.map((i) => ({ ...i, quantity: 0, price: 0 })));
-    setPayments([{ id: "p-1", method: "dinheiro", amount: 0 }]);
+    setPayments({ credito: 0, debito: 0, dinheiro: 0, pix: 0 });
   };
 
   const totalPaid = useMemo(() => {
@@ -94,46 +95,170 @@ export default function SaleForm() {
     }, 0);
   }, [payments]);
 
-  const cashPaid = Number.isNaN(payments.dinheiro) ? 0 : payments.dinheiro;
+  const change = Math.max(0, totalPaid - total);
+  const pending = Math.max(0, total - totalPaid);
+  const fillRemaining = (method: PaymentMethod) => {
+    setPayments({
+      credito: method === "credito" ? total : 0,
+      debito: method === "debito" ? total : 0,
+      dinheiro: method === "dinheiro" ? total : 0,
+      pix: method === "pix" ? total : 0,
+    });
+  };
 
-const change = Math.max(0, cashPaid - total);
-const pending = Math.max(0, total - totalPaid);
-const fillRemaining = (method: PaymentMethod) => {
-  const remaining = Math.max(0, total - totalPaid);
-  setPayments((prev) => ({
-    ...prev,
-    [method]: Number((prev[method] || 0) + remaining),
-  }));
-};
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
+  const years = useMemo(() => {
+    const current = new Date().getFullYear();
+    return Array.from({ length: 101 }, (_, idx) => current - idx);
+  }, []);
+
+  const months = [
+    { value: 1, label: "Jan" },
+    { value: 2, label: "Fev" },
+    { value: 3, label: "Mar" },
+    { value: 4, label: "Abr" },
+    { value: 5, label: "Mai" },
+    { value: 6, label: "Jun" },
+    { value: 7, label: "Jul" },
+    { value: 8, label: "Ago" },
+    { value: 9, label: "Set" },
+    { value: 10, label: "Out" },
+    { value: 11, label: "Nov" },
+    { value: 12, label: "Dez" },
+  ];
+
+  const parsedBirth = useMemo(() => {
+    const [y, m, d] = customer.birthDate.split("-").map((v) => Number(v) || 0);
+    return { year: y, month: m, day: d };
+  }, [customer.birthDate]);
+
+  const daysInMonth = (year: number, month: number) => {
+    if (!year || !month) return 31;
+    return new Date(year, month, 0).getDate();
+  };
+
+  const handleBirthChange = (part: "year" | "month" | "day", value: number) => {
+    const next = { ...parsedBirth, [part]: value };
+    const maxDay = daysInMonth(next.year, next.month);
+    if (next.day > maxDay) next.day = maxDay;
+    if (next.year && next.month && next.day) {
+      const mm = String(next.month).padStart(2, "0");
+      const dd = String(next.day).padStart(2, "0");
+      setCustomer((prev) => ({ ...prev, birthDate: `${next.year}-${mm}-${dd}` }));
+    } else {
+      setCustomer((prev) => ({ ...prev, birthDate: "" }));
+    }
+  };
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
       <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-6 text-text-main dark:text-white">
           <Lucide.User className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-bold text-text-main dark:text-white">Dados do cliente</h3>
+          <h3 className="text-lg font-bold">Dados do Cliente</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="customer-name">Nome (opcional)</Label>
-            <Input
-              id="customer-name"
-              value={customer.name}
-              onChange={(e) => setCustomer((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="Nome do cliente"
-              tabIndex={0}
-            />
+        <div className="flex flex-col gap-4 md:flex-row md:gap-2.5">
+          <div className="w-full md:w-[240px] space-y-1">
+            <label className="block text-sm font-semibold mb-1 ml-1 text-text-secondary dark:text-[#bcaec4]" htmlFor="customer-phone">
+              Celular (WhatsApp)
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                <Lucide.Smartphone className="h-4 w-4" />
+              </span>
+              <Input
+                id="customer-phone"
+                value={customer.phone}
+                onChange={(e) =>
+                  setCustomer((prev) => ({ ...prev, phone: formatPhone(e.target.value) }))
+                }
+                placeholder="(00) 00000-0000"
+                inputMode="tel"
+                className="pl-10"
+                tabIndex={0}
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="customer-phone">WhatsApp (opcional)</Label>
-            <Input
-              id="customer-phone"
-              value={customer.phone}
-              onChange={(e) => setCustomer((prev) => ({ ...prev, phone: e.target.value }))}
-              placeholder="(00) 00000-0000"
-              inputMode="tel"
-              tabIndex={0}
-            />
+          <div className="flex-1 space-y-1">
+            <label className="block text-sm font-semibold mb-1 ml-1 text-text-secondary dark:text-[#bcaec4]" htmlFor="customer-name">
+              Nome Completo
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                <Lucide.BadgeCheck className="h-4 w-4" />
+              </span>
+              <Input
+                id="customer-name"
+                value={customer.name}
+                onChange={(e) => setCustomer((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Nome do cliente"
+                className="pl-10"
+                tabIndex={0}
+              />
+            </div>
+          </div>
+          <div className="w-full md:max-w-xs space-y-1">
+            <label className="block text-sm font-semibold mb-1 ml-1 text-text-secondary dark:text-[#bcaec4]" htmlFor="customer-birth">
+              Data de Nascimento
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
+                  <Lucide.Cake className="h-4 w-4" />
+                </span>
+                <select
+                  className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light pl-9 pr-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                  value={parsedBirth.year || ""}
+                  onChange={(e) => handleBirthChange("year", Number(e.target.value))}
+                  tabIndex={0}
+                >
+                  <option value="">Ano</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <select
+                className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                value={parsedBirth.month || ""}
+                onChange={(e) => handleBirthChange("month", Number(e.target.value))}
+                tabIndex={0}
+              >
+                <option value="">Mês</option>
+                {months.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                value={parsedBirth.day || ""}
+                onChange={(e) => handleBirthChange("day", Number(e.target.value))}
+                tabIndex={0}
+              >
+                <option value="">Dia</option>
+                {Array.from(
+                  { length: daysInMonth(parsedBirth.year, parsedBirth.month) },
+                  (_, idx) => idx + 1
+                ).map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </Card>
@@ -237,22 +362,22 @@ const fillRemaining = (method: PaymentMethod) => {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-surface-light dark:bg-surface-dark rounded-3xl p-6 shadow-sm border border-[#e6e1e8] dark:border-[#452b4d] flex flex-col h-full">
           <div className="flex items-center gap-2 mb-6 text-text-main dark:text-white">
-            <span className="material-symbols-outlined text-primary">payments</span>
+            <Lucide.Wallet className="h-5 w-5 text-primary" />
             <h3 className="text-lg font-bold">Formas de Pagamento</h3>
           </div>
           <div className="flex-grow space-y-4">
             {(
               [
-                { method: "credito", label: "CRÉDITO", icon: "credit_card" },
-                { method: "debito", label: "DÉBITO", icon: "credit_card_heart" },
-                { method: "dinheiro", label: "DINHEIRO", icon: "attach_money" },
-                { method: "pix", label: "PIX", icon: "qr_code_2" },
-              ] as { method: PaymentMethod; label: string; icon: string }[]
-            ).map(({ method, label, icon }) => (
+                { method: "credito", label: "CRÉDITO", Icon: Lucide.CreditCard },
+                { method: "debito", label: "DÉBITO", Icon: Lucide.CreditCard },
+                { method: "dinheiro", label: "DINHEIRO", Icon: Lucide.Wallet },
+                { method: "pix", label: "PIX", Icon: Lucide.Scan },
+              ] as { method: PaymentMethod; label: string; Icon: Lucide.LucideIcon }[]
+            ).map(({ method, label, Icon }) => (
               <div key={method} className="flex items-center gap-3">
-                <div className="w-24 md:w-32 flex items-center gap-2 text-sm font-bold text-text-secondary dark:text-[#bcaec4]">
-                  <span className="material-symbols-outlined text-[18px]">{icon}</span>
-                  {label}
+                <div className="w-28 md:w-32 flex items-center gap-2 text-sm font-bold text-text-secondary dark:text-[#bcaec4]">
+                  <Icon className="h-5 w-5 text-text-secondary dark:text-[#bcaec4]" />
+                  <span className="uppercase tracking-wide">{label}</span>
                 </div>
                 <div className="flex-grow flex gap-2">
                   <div className="relative flex-grow">
@@ -274,9 +399,10 @@ const fillRemaining = (method: PaymentMethod) => {
                   </div>
                   <button
                     type="button"
-                    className="px-4 h-14 rounded-2xl bg-secondary/20 text-text-main font-bold hover:bg-secondary/30 active:scale-95 transition-all text-sm"
+                    className="px-4 h-14 rounded-2xl bg-secondary/20 text-text-main font-bold hover:bg-secondary/30 active:scale-95 transition-all text-sm flex items-center gap-1"
                     onClick={() => fillRemaining(method)}
                   >
+                    <Lucide.Plus className="h-4 w-4" />
                     Total
                   </button>
                 </div>
@@ -319,14 +445,14 @@ const fillRemaining = (method: PaymentMethod) => {
           <div className="pt-8 relative z-10">
             <button className="w-full h-14 bg-primary hover:bg-primary-hover active:scale-[0.98] transition-all text-white rounded-full font-black text-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2">
               <span>Finalizar Venda</span>
-              <span className="material-symbols-outlined">arrow_forward</span>
+              <Lucide.ArrowRight className="h-5 w-5" />
             </button>
             <button
               type="button"
-              className="w-full mt-3 h-10 text-white/40 hover:text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+              className="w-full mt-3 h-10 text-white/70 hover:text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
               onClick={resetForm}
             >
-              <span className="material-symbols-outlined text-[18px]">restart_alt</span>
+              <Lucide.RotateCw className="h-4 w-4" />
               Limpar Tudo
             </button>
           </div>
