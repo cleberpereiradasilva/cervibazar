@@ -5,7 +5,7 @@ type TableRootProps = React.TableHTMLAttributes<HTMLTableElement>;
 
 export function Table({ className, ...props }: TableRootProps) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border dark:border-[#452b4d]">
+    <div className="overflow-hidden rounded-[var(--radius)] border border-border dark:border-[#452b4d]">
       <div className="overflow-x-auto">
         <table
           className={cn(

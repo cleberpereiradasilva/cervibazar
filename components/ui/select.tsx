@@ -24,7 +24,7 @@ export function Select({
     <div className="relative">
       <select
         className={cn(
-          "h-11 w-full appearance-none rounded-lg border border-input bg-background px-4 pr-10 text-sm text-text-main ring-primary transition focus:border-primary focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-background-dark dark:text-white",
+          "h-11 w-full appearance-none rounded-[var(--radius)] border border-input bg-background px-4 pr-10 text-sm text-text-main ring-primary transition focus:border-primary focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-background-dark dark:text-white",
           className
         )}
         {...props}

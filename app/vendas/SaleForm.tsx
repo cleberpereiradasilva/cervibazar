@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCategories } from "@/app/hooks/useCategories";
-import { cn } from "@/components/utils/cn";
 import * as Lucide from "lucide-react";
 import { toast } from "sonner";
+import { searchClients } from "@/app/actions/clients/searchClients";
+import { getClientToken } from "@/app/lib/auth/getClientToken";
+import { createSale } from "@/app/actions/sales/createSale";
 
 type LineItem = {
   id: string;
@@ -27,6 +27,13 @@ type Customer = {
 
 type PaymentMethod = "dinheiro" | "debito" | "credito" | "pix";
 
+type ClientSuggestion = {
+  id: string;
+  name: string;
+  phone: string;
+  birthday?: Date | string | null;
+};
+
 function getIcon(icon: string) {
   const IconComp = (Lucide as Record<string, any>)[icon] ?? Lucide.Tag;
   return IconComp;
@@ -42,6 +49,15 @@ export default function SaleForm() {
     debito: 0,
     pix: 0,
   });
+  const [submissionState, setSubmissionState] = useState<"idle" | "submitting" | "failed">("idle");
+  const [birthParts, setBirthParts] = useState<{ year: number; month: number; day: number }>({
+    year: 0,
+    month: 0,
+    day: 0,
+  });
+  const [suggestions, setSuggestions] = useState<ClientSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [phoneQuery, setPhoneQuery] = useState("");
 
   useEffect(() => {
     setItems(
@@ -79,13 +95,15 @@ export default function SaleForm() {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    toast.success("Venda registrada (mock).");
+    submitSale();
   };
 
   const resetForm = () => {
     setCustomer({ name: "", phone: "", birthDate: "" });
+    setBirthParts({ year: 0, month: 0, day: 0 });
     setItems((prev) => prev.map((i) => ({ ...i, quantity: 0, price: 0 })));
     setPayments({ credito: 0, debito: 0, dinheiro: 0, pix: 0 });
+    setSubmissionState("idle");
   };
 
   const totalPaid = useMemo(() => {
@@ -136,26 +154,109 @@ export default function SaleForm() {
     { value: 12, label: "Dez" },
   ];
 
-  const parsedBirth = useMemo(() => {
-    const [y, m, d] = customer.birthDate.split("-").map((v) => Number(v) || 0);
-    return { year: y, month: m, day: d };
-  }, [customer.birthDate]);
-
   const daysInMonth = (year: number, month: number) => {
     if (!year || !month) return 31;
     return new Date(year, month, 0).getDate();
   };
 
   const handleBirthChange = (part: "year" | "month" | "day", value: number) => {
-    const next = { ...parsedBirth, [part]: value };
+    const next = { ...birthParts, [part]: value };
     const maxDay = daysInMonth(next.year, next.month);
     if (next.day > maxDay) next.day = maxDay;
+    setBirthParts(next);
     if (next.year && next.month && next.day) {
       const mm = String(next.month).padStart(2, "0");
       const dd = String(next.day).padStart(2, "0");
       setCustomer((prev) => ({ ...prev, birthDate: `${next.year}-${mm}-${dd}` }));
     } else {
       setCustomer((prev) => ({ ...prev, birthDate: "" }));
+    }
+  };
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      const digits = phoneQuery.replace(/\D/g, "");
+      if (digits.length < 3) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+      try {
+        const token = getClientToken();
+        if (!token) return;
+        const result = await searchClients(token, phoneQuery);
+        setSuggestions(result);
+        setShowSuggestions(result.length > 0);
+      } catch {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [phoneQuery]);
+
+  const disableAll = submissionState === "submitting";
+  const lockNonItems = submissionState === "failed";
+
+  const submitSale = async () => {
+    const token = getClientToken();
+    if (!token) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      return;
+    }
+
+    const itemsPayload = items
+      .filter((item) => item.quantity > 0 && item.price > 0)
+      .map((item) => ({
+        categoryId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+    if (!customer.phone.trim()) {
+      toast.error("Informe o telefone do cliente.");
+      return;
+    }
+
+    if (!customer.name.trim()) {
+      toast.error("Informe o nome do cliente.");
+      return;
+    }
+
+    if (!customer.birthDate) {
+      toast.error("Informe a data de nascimento do cliente.");
+      return;
+    }
+
+    if (!itemsPayload.length) {
+      toast.error("Adicione pelo menos um item na venda.");
+      return;
+    }
+
+    if (totalPaid <= 0) {
+      toast.error("Informe pelo menos uma forma de pagamento.");
+      return;
+    }
+
+    if (totalPaid < total) {
+      toast.error("O total pago não pode ser menor que o valor da venda.");
+      return;
+    }
+
+    setSubmissionState("submitting");
+    setShowSuggestions(false);
+
+    try {
+      await createSale(token, {
+        customer,
+        items: itemsPayload,
+        payments,
+      });
+      toast.success("Venda cadastrada com sucesso!");
+      resetForm();
+    } catch (error: any) {
+      toast.error("Erro ao efetuar a venda!");
+      setSubmissionState("failed");
     }
   };
 
@@ -179,13 +280,56 @@ export default function SaleForm() {
                 id="customer-phone"
                 value={customer.phone}
                 onChange={(e) =>
-                  setCustomer((prev) => ({ ...prev, phone: formatPhone(e.target.value) }))
+                  setCustomer((prev) => {
+                    const formatted = formatPhone(e.target.value);
+                    setPhoneQuery(formatted);
+                    return { ...prev, phone: formatted };
+                  })
                 }
                 placeholder="(00) 00000-0000"
                 inputMode="tel"
                 className="pl-10"
                 tabIndex={0}
+                disabled={disableAll || lockNonItems}
               />
+              {showSuggestions && suggestions.length > 0 && !(disableAll || lockNonItems) && (
+                <div className="absolute z-20 mt-1 w-full rounded-[16px] border border-border bg-white shadow-lg dark:border-[#452b4d] dark:bg-background-dark">
+                  {suggestions.map((sug) => (
+                    <button
+                      key={sug.id}
+                      type="button"
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-primary/5 dark:hover:bg-[#382240]"
+                      onClick={() => {
+                        setCustomer({
+                          name: sug.name,
+                          phone: formatPhone(sug.phone),
+                          birthDate: sug.birthday
+                            ? new Date(sug.birthday).toISOString().slice(0, 10)
+                            : "",
+                        });
+                        if (sug.birthday) {
+                          const date = new Date(sug.birthday);
+                          setBirthParts({
+                            year: date.getFullYear(),
+                            month: date.getMonth() + 1,
+                            day: date.getDate(),
+                          });
+                        } else {
+                          setBirthParts({ year: 0, month: 0, day: 0 });
+                        }
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-text-main dark:text-white">{sug.name}</span>
+                        <span className="text-xs text-text-secondary dark:text-[#bcaec4]">
+                          {formatPhone(sug.phone)}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex-1 space-y-1">
@@ -203,6 +347,7 @@ export default function SaleForm() {
                 placeholder="Nome do cliente"
                 className="pl-10"
                 tabIndex={0}
+                disabled={disableAll || lockNonItems}
               />
             </div>
           </div>
@@ -216,10 +361,11 @@ export default function SaleForm() {
                   <Lucide.Cake className="h-4 w-4" />
                 </span>
                 <select
-                  className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light pl-9 pr-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
-                  value={parsedBirth.year || ""}
+                  className="h-11 w-[130px] rounded-xl border border-[#e6e1e8] bg-background-light pl-9 pr-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                  value={birthParts.year || ""}
                   onChange={(e) => handleBirthChange("year", Number(e.target.value))}
                   tabIndex={0}
+                  disabled={disableAll || lockNonItems}
                 >
                   <option value="">Ano</option>
                   {years.map((year) => (
@@ -231,9 +377,10 @@ export default function SaleForm() {
               </div>
               <select
                 className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
-                value={parsedBirth.month || ""}
+                value={birthParts.month || ""}
                 onChange={(e) => handleBirthChange("month", Number(e.target.value))}
                 tabIndex={0}
+                disabled={disableAll || lockNonItems}
               >
                 <option value="">Mês</option>
                 {months.map((m) => (
@@ -244,13 +391,14 @@ export default function SaleForm() {
               </select>
               <select
                 className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
-                value={parsedBirth.day || ""}
+                value={birthParts.day || ""}
                 onChange={(e) => handleBirthChange("day", Number(e.target.value))}
                 tabIndex={0}
+                disabled={disableAll || lockNonItems}
               >
                 <option value="">Dia</option>
                 {Array.from(
-                  { length: daysInMonth(parsedBirth.year, parsedBirth.month) },
+                  { length: daysInMonth(birthParts.year, birthParts.month) },
                   (_, idx) => idx + 1
                 ).map((d) => (
                   <option key={d} value={d}>
@@ -301,6 +449,7 @@ export default function SaleForm() {
                           updateItem(item.id, "quantity", Math.max(0, item.quantity - 1))
                         }
                         tabIndex={0}
+                        disabled={disableAll}
                       >
                         <Lucide.Minus className="h-4 w-4" />
                       </button>
@@ -313,12 +462,14 @@ export default function SaleForm() {
                           updateItem(item.id, "quantity", Math.max(0, Number(e.target.value)))
                         }
                         tabIndex={0}
+                        disabled={disableAll}
                       />
                       <button
                         type="button"
                         className="w-11 h-10 flex items-center justify-center text-text-secondary hover:bg-gray-100 dark:hover:bg-[#452b4d]"
                         onClick={() => updateItem(item.id, "quantity", item.quantity + 1)}
                         tabIndex={0}
+                        disabled={disableAll}
                       >
                         <Lucide.Plus className="h-4 w-4" />
                       </button>
@@ -338,6 +489,7 @@ export default function SaleForm() {
                         }
                         inputMode="decimal"
                         tabIndex={0}
+                        disabled={disableAll}
                       />
                     </div>
                   </div>
@@ -385,7 +537,7 @@ export default function SaleForm() {
                       R$
                     </span>
                     <input
-                      className="w-full h-14 pl-12 pr-4 bg-background-light dark:bg-background-dark border-transparent focus:border-primary focus:ring-0 rounded-2xl text-text-main dark:text-white font-bold text-xl placeholder:text-text-secondary/60"
+                    className="w-full h-14 pl-12 pr-4 bg-background-light dark:bg-background-dark border-transparent focus:border-primary focus:ring-0 rounded-[16px] text-text-main dark:text-white font-bold text-xl placeholder:text-text-secondary/60"
                       value={payments[method] || ""}
                       onChange={(e) =>
                         setPayments((prev) => ({
@@ -395,12 +547,14 @@ export default function SaleForm() {
                       }
                       inputMode="decimal"
                       placeholder="000,00"
+                      disabled={disableAll || lockNonItems}
                     />
                   </div>
                   <button
                     type="button"
-                    className="px-4 h-14 rounded-2xl bg-secondary/20 text-text-main font-bold hover:bg-secondary/30 active:scale-95 transition-all text-sm flex items-center gap-1"
+                    className="px-4 h-14 rounded-[16px] bg-secondary/20 text-text-main font-bold hover:bg-secondary/30 active:scale-95 transition-all text-sm flex items-center gap-1"
                     onClick={() => fillRemaining(method)}
+                    disabled={disableAll || lockNonItems}
                   >
                     <Lucide.Plus className="h-4 w-4" />
                     Total
@@ -435,7 +589,7 @@ export default function SaleForm() {
                 </span>
               </div>
             </div>
-            <div className="bg-white/10 rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-white/10 rounded-[16px] p-4 flex items-center justify-between">
               <span className="font-bold text-lg">Troco</span>
               <span className="text-2xl font-black text-secondary">
                 {change.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -443,14 +597,34 @@ export default function SaleForm() {
             </div>
           </div>
           <div className="pt-8 relative z-10">
-            <button className="w-full h-14 bg-primary hover:bg-primary-hover active:scale-[0.98] transition-all text-white rounded-full font-black text-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2">
-              <span>Finalizar Venda</span>
-              <Lucide.ArrowRight className="h-5 w-5" />
+            <button
+              type="button"
+              className="w-full h-14 bg-primary hover:bg-primary-hover active:scale-[0.98] transition-all text-white rounded-[16px] font-black text-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              onClick={submitSale}
+              disabled={disableAll}
+            >
+              {submissionState === "submitting" ? (
+                <>
+                  <Lucide.Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Finalizando...</span>
+                </>
+              ) : submissionState === "failed" ? (
+                <>
+                  <Lucide.RefreshCw className="h-5 w-5" />
+                  <span>Tentar novamente</span>
+                </>
+              ) : (
+                <>
+                  <span>Finalizar Venda</span>
+                  <Lucide.ArrowRight className="h-5 w-5" />
+                </>
+              )}
             </button>
             <button
               type="button"
               className="w-full mt-3 h-10 text-white/70 hover:text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
               onClick={resetForm}
+              disabled={disableAll}
             >
               <Lucide.RotateCw className="h-4 w-4" />
               Limpar Tudo

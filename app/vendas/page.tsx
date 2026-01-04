@@ -1,5 +1,6 @@
 import SidebarLayout from "../sidebar";
 import SaleForm from "./SaleForm";
+import { Toaster } from "sonner";
 
 export default function VendasPage() {
   return (
@@ -16,6 +17,7 @@ export default function VendasPage() {
           </div>
         </div>
         <SaleForm />
+        <Toaster position="top-right" richColors />
       </div>
     </SidebarLayout>
   );

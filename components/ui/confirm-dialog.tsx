@@ -34,7 +34,7 @@ export function ConfirmDialog({
       aria-labelledby="confirm-dialog-title"
       aria-describedby={description ? "confirm-dialog-description" : undefined}
     >
-      <div className="w-full max-w-md rounded-2xl bg-surface-light p-6 shadow-xl outline outline-1 outline-border dark:bg-surface-dark dark:outline-[#452b4d]">
+      <div className="w-full max-w-md rounded-[var(--radius)] bg-surface-light p-6 shadow-xl outline outline-1 outline-border dark:bg-surface-dark dark:outline-[#452b4d]">
         <div className="space-y-2">
           <h3
             id="confirm-dialog-title"
