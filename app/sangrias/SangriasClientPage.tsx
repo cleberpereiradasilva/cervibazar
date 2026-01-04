@@ -63,7 +63,7 @@ export default function SangriasClientPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors duration={2000} />
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-text-main dark:text-white md:text-4xl">

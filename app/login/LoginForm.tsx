@@ -25,7 +25,7 @@ export default function LoginForm() {
 
   return (
     <>
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="top-right" duration={2000} />
       <Card className="p-8 shadow-xl">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-black tracking-tight text-text-main dark:text-white">

@@ -14,10 +14,14 @@ export function useLogin() {
       try {
         const result = await login(input);
         // Salva token em cookie acessível no client
-        const encodedToken = encodeURIComponent(result.token);
-        document.cookie = `auth_token=${encodedToken}; path=/; SameSite=Lax; ${
+        const attrs = `path=/; SameSite=Lax; ${
           process.env.NODE_ENV === "production" ? "Secure;" : ""
         } max-age=${60 * 60}`;
+        document.cookie = `auth_token=${encodeURIComponent(result.token)}; ${attrs}`;
+        document.cookie = `user_name=${encodeURIComponent(result.name)}; ${attrs}`;
+        document.cookie = `user_role=${encodeURIComponent(result.role)}; ${attrs}`;
+        document.cookie = `user_id=${encodeURIComponent(result.id)}; ${attrs}`;
+        document.cookie = `user_username=${encodeURIComponent(result.username)}; ${attrs}`;
         router.refresh();
         router.push("/");
         return { ok: true, error: null, token: result.token };

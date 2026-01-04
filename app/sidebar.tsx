@@ -9,6 +9,7 @@ import {
   BarChart3,
   CircleMinus,
   ShoppingCart as ShoppingCartIcon,
+  History,
   Lock,
   LockOpen,
   LogOut,
@@ -26,6 +27,17 @@ import { ScrollArea } from "../components/ui/scroll-area";
 import { Sheet } from "../components/ui/sheet";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
+import { useCurrentUser } from "./hooks/useCurrentUser";
+import { Toaster } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ProfileForm from "./profile/ProfileForm";
 
 type SidebarLayoutProps = {
   readonly children: React.ReactNode;
@@ -40,8 +52,10 @@ type NavItem = {
 
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const router = useRouter();
+  const { user: currentUser } = useCurrentUser();
   const mainNavigation: NavItem[] = [
     { label: "Vendas", icon: ShoppingCartIcon, href: "/vendas" },
+    { label: "Histórico", icon: History, href: "/historico" },
     { label: "Abertura de Caixa", icon: LockOpen, href: "/abertura" },
     { label: "Fechamento de Caixa", icon: Lock, href: "#" },
     { label: "Sangria de Caixa", icon: WalletMinimal, href: "/sangrias" },
@@ -57,11 +71,17 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleLogout = () => {
-    document.cookie = `auth_token=; path=/; max-age=0; SameSite=Lax; ${
+    const common = `path=/; max-age=0; SameSite=Lax; ${
       process.env.NODE_ENV === "production" ? "Secure;" : ""
     }`;
+    document.cookie = `auth_token=; ${common}`;
+    document.cookie = `user_name=; ${common}`;
+    document.cookie = `user_role=; ${common}`;
+    document.cookie = `user_id=; ${common}`;
+    document.cookie = `user_username=; ${common}`;
     router.push("/login");
   };
 
@@ -167,27 +187,55 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 <PanelLeft className="h-5 w-5" />
               </Button>
             </div>
-            <h1 className="text-xl font-bold text-text-main md:text-2xl dark:text-white">
-              Dashboard
-            </h1>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="mr-2 hidden flex-col items-end sm:flex">
               <span className="text-sm font-bold text-text-main dark:text-white">
-                Admin User
+                {currentUser?.name || "Usuário"}
               </span>
               <Badge variant="accent" aria-label="Cargo do usuário">
-                Gerente
+                {currentUser?.role === "admin"
+                  ? "Administrador"
+                  : currentUser?.role === "caixa"
+                  ? "Caixa"
+                  : "—"}
               </Badge>
             </div>
-            <Button
-              className="flex size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 transition-transform hover:scale-105"
-              aria-label="Perfil"
-              tabIndex={0}
-            >
-              <UserRound className="h-5 w-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="flex size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 transition-transform hover:scale-105"
+                  aria-label="Abrir menu do usuário"
+                  tabIndex={0}
+                >
+                  {currentUser?.name ? (
+                    <span className="text-sm font-bold">
+                      {currentUser.name
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0]?.toUpperCase())
+                        .join("")}
+                    </span>
+                  ) : (
+                    <UserRound className="h-5 w-5" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{currentUser?.name || "Usuário"}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => setProfileOpen(true)} className="gap-2">
+                  <UserRound className="h-4 w-4" />
+                  Perfil
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="gap-2 text-red-600">
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -195,6 +243,19 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           {children}
         </main>
       </div>
+
+      <Sheet
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        title="Editar Perfil"
+        className="w-full max-w-xl"
+      >
+        <div className="p-6">
+          <ProfileForm onClose={() => setProfileOpen(false)} />
+        </div>
+      </Sheet>
+
+      <Toaster position="top-right" richColors duration={2000} />
     </div>
   );
 }

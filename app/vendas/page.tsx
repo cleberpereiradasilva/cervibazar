@@ -17,7 +17,7 @@ export default function VendasPage() {
           </div>
         </div>
         <SaleForm />
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors duration={2000} />
       </div>
     </SidebarLayout>
   );
