@@ -8,7 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   CircleMinus,
-  HandCoins,
+  ShoppingCart as ShoppingCartIcon,
   Lock,
   LockOpen,
   LogOut,
@@ -19,6 +19,7 @@ import {
   UserRound,
   Users,
   WalletMinimal,
+  Tags as TagsIcon,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -40,8 +41,8 @@ type NavItem = {
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const router = useRouter();
   const mainNavigation: NavItem[] = [
-    { label: "Frente de Caixa", icon: HandCoins, href: "#" },
-    { label: "Abertura de Caixa", icon: LockOpen, href: "#", active: true },
+    { label: "Vendas", icon: ShoppingCartIcon, href: "/vendas" },
+    { label: "Abertura de Caixa", icon: LockOpen, href: "/abertura" },
     { label: "Fechamento de Caixa", icon: Lock, href: "#" },
     { label: "Sangria de Caixa", icon: WalletMinimal, href: "/sangrias" },
   ];
@@ -51,6 +52,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     { label: "Clientes", icon: Users, href: "/clientes" },
     { label: "Gerenciamento de Usuários", icon: UserCog, href: "/usuarios" },
     { label: "Motivos de Sangria", icon: NotebookPen, href: "/motivos" },
+    { label: "Categorias", icon: TagsIcon, href: "/categorias" },
   ];
 
   const [mobileOpen, setMobileOpen] = useState(false);

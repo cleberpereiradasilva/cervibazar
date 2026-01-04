@@ -50,6 +50,20 @@
       "when": 1767485000000,
       "tag": "0006_drop_sangria_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1767486000000,
+      "tag": "0007_add_cash_openings",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1767487000000,
+      "tag": "0008_add_categories",
+      "breakpoints": true
     }
   ]
 }
