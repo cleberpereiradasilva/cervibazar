@@ -31,7 +31,7 @@ export function sangriaStore() {
     reasonId: string;
     amount: number;
     createdBy: string;
-    observation?: string;
+    observation?: string | null;
   }) => {
     const id = generateShortId();
     const createdAt = new Date();
@@ -40,7 +40,7 @@ export function sangriaStore() {
       .values({
         id,
         reasonId: input.reasonId,
-        amount: input.amount,
+        amount: input.amount.toString(),
         createdBy: input.createdBy,
         observation: input.observation?.trim() ?? null,
         createdAt,
@@ -61,14 +61,14 @@ export function sangriaStore() {
     id: string;
     reasonId: string;
     amount: number;
-    observation?: string;
+    observation?: string | null;
   }) => {
     const now = new Date();
     const [updated] = await db
       .update(sangrias)
       .set({
         reasonId: input.reasonId,
-        amount: input.amount,
+        amount: input.amount.toString(),
         observation: input.observation?.trim() ?? null,
         updatedAt: now,
       })

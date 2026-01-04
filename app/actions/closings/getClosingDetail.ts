@@ -76,7 +76,6 @@ function toWeekday(date: Date) {
 export async function getClosingDetail(
   token: string,
   date: string,
-  _nextDate: string,
 ): Promise<ClosingDetail | null> {
   await verifyAuthToken(token);
   const db = getDb();
@@ -187,8 +186,8 @@ export async function getClosingDetail(
   const { rows: paymentRows } = await db.execute(paymentsQuery);
   const payment = paymentRows[0];
 
-  const { rows: categories } = await db.execute(categoriesQuery);
-  const { rows: sangriasByReason } = await db.execute(sangriasQuery);
+  const { rows: categories } = await db.execute<CategoryTotals>(categoriesQuery);
+  const { rows: sangriasByReason } = await db.execute<CategoryTotals>(sangriasQuery);
 
   const dayDate = new Date(date);
   return {
@@ -211,13 +210,13 @@ export async function getClosingDetail(
       pix: Number(payment?.pix) || 0,
       pending: Number(payment?.pending) || 0,
     },
-    categories: categories.map((row) => ({
+    categories: categories.map((row: CategoryTotals) => ({
       category: row.category,
       quantity: row.quantity,
       total: Number(row.total) || 0,
     })),
     sangriaTotal: Number(totals.sangria) || 0,
-    sangriasByReason: sangriasByReason.map((row) => ({
+    sangriasByReason: sangriasByReason.map((row: CategoryTotals) => ({
       category: row.category,
       quantity: 0,
       total: Number(row.total) || 0,

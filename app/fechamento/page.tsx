@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SidebarLayout from "../sidebar";
-import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
 import * as Lucide from "lucide-react";
 import { listClosings, type ClosingRow } from "@/app/actions/closings/listClosings";
@@ -14,19 +13,8 @@ function toLocalISODate(date: Date) {
   return new Date(date.getTime() - tzOffset).toISOString().slice(0, 10);
 }
 
-function nextDayISO(dateISO: string) {
-  const [year, month, day] = dateISO.split("-").map((value) => Number(value));
-  const base = new Date(year, (month ?? 1) - 1, day ?? 1);
-  base.setDate(base.getDate() + 1);
-  return toLocalISODate(base);
-}
-
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function formatNumber(value: number) {
-  return value.toLocaleString("pt-BR");
 }
 
 export default function FechamentoPage() {
@@ -43,11 +31,9 @@ export default function FechamentoPage() {
         return;
       }
 
-      const start = selectedDate;
-      const end = nextDayISO(selectedDate);
       setLoading(true);
       try {
-        const rows = await listClosings(token, start, end);
+        const rows = await listClosings(token, selectedDate);
         setData(rows);
       } catch (error: any) {
         toast.error(error?.message || "Erro ao carregar fechamento.");

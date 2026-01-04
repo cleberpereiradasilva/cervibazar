@@ -20,7 +20,6 @@ export default function ProfileForm({ onClose }: Props) {
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [role, setRole] = useState<"admin" | "caixa" | "">("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -66,7 +65,6 @@ export default function ProfileForm({ onClose }: Props) {
         setId(user.id);
         setName(user.name);
         setUsername(user.username);
-        setRole(user.role);
       } catch (error: any) {
         toast.error(error?.message || "Erro ao carregar perfil.");
       }

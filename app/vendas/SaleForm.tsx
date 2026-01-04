@@ -254,7 +254,7 @@ export default function SaleForm() {
       });
       toast.success("Venda cadastrada com sucesso!");
       resetForm();
-    } catch (error: any) {
+    } catch {
       toast.error("Erro ao efetuar a venda!");
       setSubmissionState("failed");
     }

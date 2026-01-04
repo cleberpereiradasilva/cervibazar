@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AtSign, Eye, EyeOff, Info, Lock, LockKeyhole, Save, UserPlus } from "lucide-react";
 import { userInputSchema } from "@/app/lib/validators/userInputSchema";
 import { userUpdateSchema } from "@/app/lib/validators/userUpdateSchema";
@@ -39,10 +39,11 @@ const passwordSchema = z
 
 type UserFormProps = {
   onSubmit: (input: {
+    id?: string;
     name: string;
     username: string;
-    password: string;
-    confirmPassword: string;
+    password?: string;
+    confirmPassword?: string;
     role: "admin" | "caixa";
   }) => Promise<{ ok: boolean; error: string | null }>;
   onCancelEdit: () => void;
@@ -72,27 +73,11 @@ export default function UserForm({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
-    Partial<
-      Record<
-        | keyof Omit<
-            UserFormProps["onSubmit"] extends (input: infer T) => any
-              ? T
-              : never,
-            "role"
-          >
-        | "role",
-        string
-      >
-    >
+    Partial<Record<"name" | "username" | "password" | "confirmPassword" | "role", string>>
   >({});
   const [touched, setTouched] = useState<
     Partial<Record<"name" | "username" | "password" | "confirmPassword" | "role", boolean>>
   >({});
-
-  const schema = useMemo(
-    () => (editingUser ? userUpdateSchema() : userInputSchema()),
-    [editingUser]
-  );
 
   type FieldKey = "name" | "username" | "password" | "confirmPassword" | "role";
 
@@ -110,7 +95,7 @@ export default function UserForm({
       const parsed = nameSchema.safeParse(current.name);
       setFieldErrors((prev) => ({
         ...prev,
-        name: parsed.success ? undefined : parsed.error.flatten().fieldErrors.name?.[0] ?? "Nome invalido.",
+        name: parsed.success ? undefined : parsed.error.issues[0]?.message ?? "Nome invalido.",
       }));
       return;
     }
@@ -119,7 +104,7 @@ export default function UserForm({
       const parsed = usernameSchema.safeParse(current.username);
       setFieldErrors((prev) => ({
         ...prev,
-        username: parsed.success ? undefined : parsed.error.flatten().fieldErrors.username?.[0] ?? "Login invalido.",
+        username: parsed.success ? undefined : parsed.error.issues[0]?.message ?? "Login invalido.",
       }));
       return;
     }
@@ -140,11 +125,11 @@ export default function UserForm({
       const passwordProvided = current.password.length > 0;
       const parsed =
         editingUser && !passwordProvided && current.confirmPassword.length === 0
-          ? { success: true }
+          ? { success: true as const }
           : passwordSchema.safeParse(current.confirmPassword);
 
       const lengthMessage =
-        parsed.success === false ? parsed.error.issues[0]?.message : undefined;
+        !parsed.success ? parsed.error.issues[0]?.message : undefined;
 
       const emptyConfirmMessage =
         passwordProvided && current.confirmPassword.length === 0
@@ -169,7 +154,7 @@ export default function UserForm({
     const parsed = roleSchema.safeParse(current.role);
     setFieldErrors((prev) => ({
       ...prev,
-      role: parsed.success ? undefined : parsed.error.flatten().fieldErrors.role?.[0] ?? "Perfil invalido.",
+      role: parsed.success ? undefined : parsed.error.issues[0]?.message ?? "Perfil invalido.",
     }));
   };
 

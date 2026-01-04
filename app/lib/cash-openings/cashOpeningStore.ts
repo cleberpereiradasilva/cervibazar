@@ -29,7 +29,7 @@ export function cashOpeningStore() {
       .insert(cashOpenings)
       .values({
         id,
-        amount: input.amount,
+        amount: input.amount.toString(),
         createdBy: input.createdBy,
         createdAt,
         updatedAt: createdAt,
@@ -48,7 +48,7 @@ export function cashOpeningStore() {
     const [updated] = await db
       .update(cashOpenings)
       .set({
-        amount: input.amount,
+        amount: input.amount.toString(),
         updatedAt: now,
       })
       .where(and(eq(cashOpenings.id, input.id), isNull(cashOpenings.deletedAt)))

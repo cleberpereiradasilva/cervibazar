@@ -4,7 +4,6 @@ import { saleItems } from "../db/schema/saleItems";
 import { sales } from "../db/schema/sales";
 import { getDb } from "../db/client";
 import { generateShortId } from "../id/generateShortId";
-import { sql } from "drizzle-orm";
 
 type SaleItemInput = {
   categoryId: string;

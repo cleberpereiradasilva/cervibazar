@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getClientToken } from "@/app/lib/auth/getClientToken";
 
 type CurrentUser = {
@@ -23,7 +23,7 @@ export function useCurrentUser() {
     return value ? decodeURIComponent(value) : "";
   };
 
-  const refreshUser = () => {
+  const refreshUser = useCallback(() => {
     const token = getClientToken();
     if (!token) {
       setUser(null);
@@ -39,14 +39,14 @@ export function useCurrentUser() {
     } else {
       setUser(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshUser();
     const handler = () => refreshUser();
     window.addEventListener("user:updated", handler);
     return () => window.removeEventListener("user:updated", handler);
-  }, []);
+  }, [refreshUser]);
 
   return { user, refreshUser };
 }

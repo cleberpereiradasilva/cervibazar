@@ -59,10 +59,22 @@ function toWeekday(date: Date) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+type ListRow = {
+  day: Date;
+  total: string | null;
+  troco: string | null;
+  opening: string | null;
+  sangria: string | null;
+  totalSales: number | null;
+  closedSales: number | null;
+  totalSangrias: number | null;
+  closedSangrias: number | null;
+  closingCount: number | null;
+};
+
 export async function listClosings(
   token: string,
   date: string,
-  _nextDate: string,
 ): Promise<ClosingRow[]> {
   await verifyAuthToken(token);
   const db = getDb();
@@ -73,18 +85,7 @@ export async function listClosings(
   const sangriaDayExpr = sql`(sa.created_at at time zone 'America/Sao_Paulo')::date`;
   const closingDayExpr = sql`(cl.created_at at time zone 'America/Sao_Paulo')::date`;
 
-  const query = sql<{
-    day: Date;
-    total: string | null;
-    troco: string | null;
-    opening: string | null;
-  sangria: string | null;
-  totalSales: number | null;
-  closedSales: number | null;
-  totalSangrias: number | null;
-  closedSangrias: number | null;
-  closingCount: number | null;
-}>`
+  const query = sql<ListRow>`
     select
       ${targetDate} as day,
       (
@@ -137,10 +138,10 @@ export async function listClosings(
     ;
   `;
 
-  const { rows } = await db.execute(query);
+  const { rows } = await db.execute<ListRow>(query);
   if (!rows.length) return [];
 
-  return rows.map((row) => {
+  return rows.map((row: ListRow) => {
     const rawDay =
       typeof row.day === "string"
         ? row.day

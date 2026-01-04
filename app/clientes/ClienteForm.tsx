@@ -86,7 +86,7 @@ export default function ClienteForm({
     }
 
     setFieldErrors({});
-    const { ok } = await onSubmit({
+    await onSubmit({
       name: result.data.name.trim(),
       phone: result.data.phone,
       birthday: birthday,

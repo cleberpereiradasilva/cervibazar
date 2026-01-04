@@ -6,7 +6,6 @@ const amountPreprocess = (value: unknown) => {
     const raw = value.trim();
     if (raw === "") return undefined;
     const hasComma = raw.includes(",");
-    const hasDot = raw.includes(".");
     if (hasComma) {
       const normalized = raw.replace(/\./g, "").replace(",", ".");
       const parsed = Number(normalized);

@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { generateShortId } from "@/app/lib/id/generateShortId";

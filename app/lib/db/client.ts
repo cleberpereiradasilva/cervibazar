@@ -1,7 +1,8 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import pg from "pg";
 
-let pool: Pool | null = null;
+const { Pool } = pg;
+let pool: any = null;
 
 export function getDb() {
   if (!process.env.DATABASE_URL) {

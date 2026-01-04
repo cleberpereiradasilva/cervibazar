@@ -18,14 +18,20 @@ export default function UsuariosClientPage() {
   const [formOpen, setFormOpen] = useState(false);
 
   const handleSubmit = async (input: {
+    id?: string;
     name: string;
     username: string;
-    password: string;
-    confirmPassword: string;
+    password?: string;
+    confirmPassword?: string;
     role: "admin" | "caixa";
   }) => {
     if (editingUser) {
-      const result = await update(editingUser.id, input);
+      const { password, confirmPassword, ...rest } = input;
+      const result = await update(editingUser.id, {
+        ...rest,
+        ...(password ? { password } : {}),
+        ...(confirmPassword ? { confirmPassword } : {}),
+      });
       if (result.ok) {
         setEditingUser(null);
         setFormOpen(false);
@@ -36,7 +42,8 @@ export default function UsuariosClientPage() {
       return result;
     }
 
-    const created = await create(input);
+    const { password = "", confirmPassword = "", ...rest } = input;
+    const created = await create({ ...rest, password, confirmPassword });
     if (created.ok) {
       setFormOpen(false);
       toast.success("Usuário criado com sucesso.");

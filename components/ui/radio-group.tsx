@@ -18,18 +18,23 @@ const RadioGroup = React.forwardRef<
         }
       }}
     >
-      {React.Children.map(children, (child) =>
-        React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<any>, {
-              name: "radio-group",
-              checked: child.props.value === value,
-              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                child.props.onChange?.(e);
-                onValueChange?.(e.target.value);
-              },
-            })
-          : child
-      )}
+      {React.Children.map(children, (child) => {
+        if (!React.isValidElement(child)) return child;
+        const element = child as React.ReactElement<{
+          value?: string;
+          onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+          name?: string;
+          checked?: boolean;
+        }>;
+        return React.cloneElement(element, {
+          name: "radio-group",
+          checked: element.props.value === value,
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+            element.props.onChange?.(e);
+            onValueChange?.(e.target.value);
+          },
+        });
+      })}
     </div>
   );
 });

@@ -39,26 +39,25 @@ export default function HistoricoClientPage() {
     [sales]
   );
 
-  const fetchSales = async (date: string) => {
-    const token = getClientToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      return;
-    }
-    try {
-      setLoading(true);
-      const result = await listSalesByDate(token, date);
-      setSales(result);
-    } catch (error: any) {
-      toast.error(error?.message || "Erro ao carregar histórico.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchSales(selectedDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const fetchSales = async () => {
+      const token = getClientToken();
+      if (!token) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
+      }
+      try {
+        setLoading(true);
+        const result = await listSalesByDate(token, selectedDate);
+        setSales(result);
+      } catch (error: any) {
+        toast.error(error?.message || "Erro ao carregar histórico.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchSales();
   }, [selectedDate]);
 
   return (

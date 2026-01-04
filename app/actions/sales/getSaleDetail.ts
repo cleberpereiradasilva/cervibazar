@@ -8,7 +8,6 @@ import { saleItems } from "@/app/lib/db/schema/saleItems";
 import { clients } from "@/app/lib/db/schema/clients";
 import { users } from "@/app/lib/db/schema/users";
 import { categories } from "@/app/lib/db/schema/categories";
-import { sql } from "drizzle-orm";
 
 export type SaleDetail = {
   id: string;

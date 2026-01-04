@@ -14,6 +14,6 @@ export async function updateSangria(
     id: payload.id!,
     reasonId: payload.reasonId,
     amount: payload.amount,
-    observation: payload.observation?.trim() ?? null,
+    observation: payload.observation?.trim(),
   });
 }

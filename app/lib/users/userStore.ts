@@ -4,7 +4,6 @@ import { getDb } from "../db/client";
 import { users } from "../db/schema/users";
 import { generateShortId } from "../id/generateShortId";
 import { SEED_ADMIN_ID } from "@/app/constants";
-import { sql } from "drizzle-orm";
 
 type UserRole = "admin" | "caixa";
 

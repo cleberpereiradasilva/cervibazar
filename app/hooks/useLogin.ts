@@ -25,7 +25,7 @@ export function useLogin() {
         router.refresh();
         router.push("/");
         return { ok: true, error: null, token: result.token };
-      } catch (err) {
+      } catch {
         const message = "Usuário ou senha inválidos.";
         return { ok: false, error: message };
       } finally {

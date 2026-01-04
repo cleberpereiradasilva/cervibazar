@@ -3,7 +3,7 @@
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { users } from "@/app/lib/db/schema/users";
-import { eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export type MeResponse = {
   id: string;

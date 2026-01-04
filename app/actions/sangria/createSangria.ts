@@ -16,6 +16,6 @@ export async function createSangria(
     reasonId: payload.reasonId,
     amount: payload.amount,
     createdBy: auth?.sub ?? SEED_ADMIN_ID,
-    observation: payload.observation?.trim() ?? null,
+    observation: payload.observation?.trim(),
   });
 }

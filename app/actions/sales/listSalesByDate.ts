@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { sales } from "@/app/lib/db/schema/sales";

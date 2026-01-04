@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import SidebarLayout from "../../sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
@@ -32,7 +32,6 @@ function formatNumber(value: number) {
 
 export default function FechamentoDetalhePage() {
   const params = useParams();
-  const router = useRouter();
   const dateKey = Array.isArray(params?.date) ? params?.date[0] : params?.date;
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<ClosingDetail | null>(null);
@@ -50,7 +49,7 @@ export default function FechamentoDetalhePage() {
       setClosing(true);
       await closeDay(token, { date: dateKey, observation });
       toast.success("Caixa fechado com sucesso.");
-      const refreshed = await getClosingDetail(token, dateKey, nextDayISO(dateKey));
+      const refreshed = await getClosingDetail(token, dateKey);
       setDetail(refreshed);
     } catch (error: any) {
       toast.error(error?.message || "Erro ao fechar o caixa.");
@@ -69,9 +68,7 @@ export default function FechamentoDetalhePage() {
       }
       setLoading(true);
       try {
-        const start = dateKey;
-        const end = nextDayISO(dateKey);
-        const resume = await getClosingDetail(token, start, end);
+        const resume = await getClosingDetail(token, dateKey);
         setDetail(resume);
       } catch (error: any) {
         toast.error(error?.message || "Erro ao carregar fechamento.");
