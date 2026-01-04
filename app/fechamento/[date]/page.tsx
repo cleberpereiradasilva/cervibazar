@@ -8,6 +8,7 @@ import { Toaster, toast } from "sonner";
 import * as Lucide from "lucide-react";
 import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { getClosingDetail, type ClosingDetail } from "@/app/actions/closings/getClosingDetail";
+import { closeDay } from "@/app/actions/closings/closeDay";
 
 function toLocalISODate(date: Date) {
   const tzOffset = date.getTimezoneOffset() * 60000;
@@ -35,6 +36,28 @@ export default function FechamentoDetalhePage() {
   const dateKey = Array.isArray(params?.date) ? params?.date[0] : params?.date;
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<ClosingDetail | null>(null);
+  const [closing, setClosing] = useState(false);
+  const [observation, setObservation] = useState("");
+
+  const handleCloseDay = async () => {
+    if (!dateKey || closing) return;
+    const token = getClientToken();
+    if (!token) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      return;
+    }
+    try {
+      setClosing(true);
+      await closeDay(token, { date: dateKey, observation });
+      toast.success("Caixa fechado com sucesso.");
+      const refreshed = await getClosingDetail(token, dateKey, nextDayISO(dateKey));
+      setDetail(refreshed);
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao fechar o caixa.");
+    } finally {
+      setClosing(false);
+    }
+  };
 
   useEffect(() => {
     if (!dateKey) return;
@@ -59,6 +82,7 @@ export default function FechamentoDetalhePage() {
     };
     void fetchData();
   }, [dateKey]);
+
 
   const resumo = useMemo(
     () =>
@@ -91,14 +115,6 @@ export default function FechamentoDetalhePage() {
               {detail ? `Resumo operacional e financeiro do dia ${detail.dateLabel}` : "Carregando dados do dia..."}
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 px-6 py-3 text-sm font-bold"
-            onClick={() => window.print()}
-          >
-            <Lucide.Printer className="h-4 w-4" />
-            Imprimir Relatório
-          </Button>
         </div>
 
         <section className="rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark">
@@ -302,22 +318,20 @@ export default function FechamentoDetalhePage() {
               className="mt-2 w-full rounded-2xl border border-border bg-surface-light p-3 text-sm text-text-main shadow-sm focus:border-primary focus:outline-none dark:border-[#452b4d] dark:bg-surface-dark dark:text-white"
               rows={3}
               placeholder="Anote ajustes ou observações antes de fechar o caixa..."
+              value={observation}
+              onChange={(e) => setObservation(e.target.value)}
             />
           </div>
-          <Button className="flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-primary text-xl font-black text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-primary/40 active:translate-y-0">
+          <Button
+            className="flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-primary text-xl font-black text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-primary/40 active:translate-y-0 disabled:opacity-60"
+            disabled={closing}
+            onClick={handleCloseDay}
+          >
             <Lucide.CheckCircle2 className="h-6 w-6" />
-            Fechar Caixa
+            {closing ? "Fechando..." : "Fechar Caixa"}
           </Button>
         </div>
 
-        <Button
-          variant="ghost"
-          className="flex items-center gap-2 self-start text-text-secondary hover:text-primary"
-          onClick={() => router.push("/fechamento")}
-        >
-          <Lucide.ArrowLeft className="h-4 w-4" />
-          Voltar para listagem
-        </Button>
       </div>
     </SidebarLayout>
   );

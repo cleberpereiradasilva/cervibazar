@@ -22,6 +22,7 @@ export async function seedAdminUser() {
   }
 
   const passwordHash = await hash(SEED_ADMIN_PASSWORD, 10);
+  const createdAt = new Date();
 
   await db.insert(users).values({
     id: SEED_ADMIN_ID,
@@ -30,5 +31,7 @@ export async function seedAdminUser() {
     role: "admin",
     passwordHash,
     createdBy: SEED_ADMIN_ID,
+    createdAt,
+    updatedAt: createdAt,
   });
 }

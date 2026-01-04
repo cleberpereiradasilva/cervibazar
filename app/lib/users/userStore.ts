@@ -4,7 +4,7 @@ import { getDb } from "../db/client";
 import { users } from "../db/schema/users";
 import { generateShortId } from "../id/generateShortId";
 import { SEED_ADMIN_ID } from "@/app/constants";
-import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
+import { sql } from "drizzle-orm";
 
 type UserRole = "admin" | "caixa";
 
@@ -38,7 +38,7 @@ export function userStore() {
     const id = generateShortId();
     const passwordHash = await hash(input.password, 10);
     const createdBy = input.createdBy ?? SEED_ADMIN_ID;
-    const createdAt = nowInSaoPaulo();
+    const createdAt = new Date();
     try {
       const [created] = await db
         .insert(users)
@@ -77,7 +77,7 @@ export function userStore() {
     role: UserRole;
     password?: string;
   }) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const updates: Record<string, unknown> = {
       name: input.name,
       username: input.username,
@@ -120,7 +120,7 @@ export function userStore() {
   };
 
   const remove = async (id: string) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [existing] = await db
       .select({
         id: users.id,

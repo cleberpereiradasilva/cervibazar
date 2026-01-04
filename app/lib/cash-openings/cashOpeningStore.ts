@@ -3,7 +3,6 @@ import { getDb } from "../db/client";
 import { cashOpenings } from "../db/schema/cashOpenings";
 import { generateShortId } from "../id/generateShortId";
 import { users } from "../db/schema/users";
-import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function cashOpeningStore() {
   const db = getDb();
@@ -25,7 +24,7 @@ export function cashOpeningStore() {
 
   const add = async (input: { amount: number; createdBy: string }) => {
     const id = generateShortId();
-    const createdAt = nowInSaoPaulo();
+    const createdAt = new Date();
     const [created] = await db
       .insert(cashOpenings)
       .values({
@@ -45,7 +44,7 @@ export function cashOpeningStore() {
   };
 
   const update = async (input: { id: string; amount: number }) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [updated] = await db
       .update(cashOpenings)
       .set({
@@ -68,7 +67,7 @@ export function cashOpeningStore() {
   };
 
   const remove = async (id: string) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [existing] = await db
       .select({ id: cashOpenings.id, deletedAt: cashOpenings.deletedAt })
       .from(cashOpenings)

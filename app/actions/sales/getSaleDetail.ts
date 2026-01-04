@@ -47,7 +47,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
   const [sale] = await db
     .select({
       id: sales.id,
-      createdAt: sql<Date>`(${sales.createdAt} at time zone 'America/Sao_Paulo')`,
+      createdAt: sales.createdAt,
       totalAmount: sales.totalAmount,
       creditAmount: sales.creditAmount,
       debitAmount: sales.debitAmount,

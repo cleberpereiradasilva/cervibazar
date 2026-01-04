@@ -4,7 +4,7 @@ import { saleItems } from "../db/schema/saleItems";
 import { sales } from "../db/schema/sales";
 import { getDb } from "../db/client";
 import { generateShortId } from "../id/generateShortId";
-import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
+import { sql } from "drizzle-orm";
 
 type SaleItemInput = {
   categoryId: string;
@@ -73,7 +73,7 @@ export function saleStore() {
         }
 
         const newClientId = generateShortId();
-        const createdAt = nowInSaoPaulo();
+        const createdAt = new Date();
         await tx.insert(clients).values({
           id: newClientId,
           name: input.customer.name.trim(),
@@ -87,7 +87,7 @@ export function saleStore() {
       }
 
       const saleId = generateShortId();
-      const createdAt = nowInSaoPaulo();
+      const createdAt = new Date();
 
       await tx.insert(sales).values({
         id: saleId,

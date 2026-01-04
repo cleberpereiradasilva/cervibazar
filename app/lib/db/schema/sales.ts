@@ -1,9 +1,14 @@
-import { pgTable, text, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, numeric, timestamp, date } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { closings } from "./closings";
 
 export const sales = pgTable("sales", {
   id: text("id").primaryKey(),
   clientId: text("client_id").notNull(),
   createdBy: text("created_by").notNull(),
+  closingId: text("closing_id")
+    .references(() => closings.id)
+    .default(null),
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
   creditAmount: numeric("credit_amount", { precision: 12, scale: 2 }).default("0").notNull(),
   debitAmount: numeric("debit_amount", { precision: 12, scale: 2 }).default("0").notNull(),
@@ -11,6 +16,7 @@ export const sales = pgTable("sales", {
   pixAmount: numeric("pix_amount", { precision: 12, scale: 2 }).default("0").notNull(),
   changeAmount: numeric("change_amount", { precision: 12, scale: 2 }).default("0").notNull(),
   pendingAmount: numeric("pending_amount", { precision: 12, scale: 2 }).default("0").notNull(),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  day: date("day", { mode: "date" }).default(sql`now()::date`).notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
 });

@@ -82,8 +82,6 @@ export async function getClosingDetail(
   const db = getDb();
 
   const targetDate = sql`to_date(${date}, 'YYYY-MM-DD')`;
-  const dayExpr = sql`(s.created_at at time zone 'America/Sao_Paulo')::date`;
-  const dayOpeningExpr = sql`(c.created_at at time zone 'America/Sao_Paulo')::date`;
 
   const totalsQuery = sql<{
     total: string | null;
@@ -101,7 +99,7 @@ export async function getClosingDetail(
         coalesce(sum(si.quantity), 0) as items
       from sales s
       left join sale_items si on si.sale_id = s.id
-      where ${dayExpr} = ${targetDate}
+      where s.day = ${targetDate}
       group by s.id, s.created_at, s.total_amount, s.change_amount
     )
     select
@@ -111,13 +109,13 @@ export async function getClosingDetail(
       (
         select coalesce(sum(amount), 0)
         from cash_openings c
-        where (c.created_at at time zone 'America/Sao_Paulo')::date = ${targetDate}
+        where c.day = ${targetDate}
           and c.deleted_at is null
       ) as opening,
       (
         select coalesce(sum(amount), 0)
         from sangrias sa
-        where (sa.created_at at time zone 'America/Sao_Paulo')::date = ${targetDate}
+        where sa.day = ${targetDate}
           and sa.deleted_at is null
       ) as sangria
     from sales_items;
@@ -137,7 +135,7 @@ export async function getClosingDetail(
       coalesce(sum(pix_amount), 0) as pix,
       coalesce(sum(pending_amount), 0) as pending
     from sales s
-    where ${dayExpr} = ${targetDate}
+    where s.day = ${targetDate}
   `;
 
   const categoriesQuery = sql<CategoryTotals>`
@@ -148,7 +146,7 @@ export async function getClosingDetail(
     from sales s
     left join sale_items si on si.sale_id = s.id
     left join categories cat on cat.id = si.category_id
-    where ${dayExpr} = ${targetDate}
+    where s.day = ${targetDate}
     group by cat.name
     order by category asc;
   `;
@@ -160,7 +158,7 @@ export async function getClosingDetail(
       coalesce(sum(sa.amount), 0) as total
     from sangrias sa
     left join sangria_reasons sr on sr.id = sa.reason_id
-    where (sa.created_at at time zone 'America/Sao_Paulo')::date = ${targetDate}
+    where sa.day = ${targetDate}
       and sa.deleted_at is null
     group by sr.name
     order by sr.name;

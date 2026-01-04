@@ -2,7 +2,6 @@ import { and, eq, isNull, desc } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories } from "../db/schema/categories";
 import { generateShortId } from "../id/generateShortId";
-import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function categoryStore() {
   const db = getDb();
@@ -23,7 +22,7 @@ export function categoryStore() {
 
   const add = async (input: { name: string; icon: string; createdBy: string }) => {
     const id = generateShortId();
-    const createdAt = nowInSaoPaulo();
+    const createdAt = new Date();
     const [created] = await db
       .insert(categories)
       .values({
@@ -45,7 +44,7 @@ export function categoryStore() {
   };
 
   const update = async (input: { id: string; name: string; icon: string }) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [updated] = await db
       .update(categories)
       .set({
@@ -70,7 +69,7 @@ export function categoryStore() {
   };
 
   const remove = async (id: string) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [existing] = await db
       .select({ id: categories.id, deletedAt: categories.deletedAt })
       .from(categories)

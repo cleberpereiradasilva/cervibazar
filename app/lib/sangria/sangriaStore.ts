@@ -4,7 +4,6 @@ import { sangrias } from "../db/schema/sangrias";
 import { generateShortId } from "../id/generateShortId";
 import { sangriaReasons } from "../db/schema/sangriaReasons";
 import { users } from "../db/schema/users";
-import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function sangriaStore() {
   const db = getDb();
@@ -35,7 +34,7 @@ export function sangriaStore() {
     observation?: string;
   }) => {
     const id = generateShortId();
-    const createdAt = nowInSaoPaulo();
+    const createdAt = new Date();
     const [created] = await db
       .insert(sangrias)
       .values({
@@ -64,7 +63,7 @@ export function sangriaStore() {
     amount: number;
     observation?: string;
   }) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [updated] = await db
       .update(sangrias)
       .set({
@@ -91,7 +90,7 @@ export function sangriaStore() {
   };
 
   const remove = async (id: string) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [existing] = await db
       .select({
         id: sangrias.id,

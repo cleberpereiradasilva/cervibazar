@@ -113,11 +113,16 @@ export default function FechamentoPage() {
                 ) : (
                   data.map((row) => {
                     const isPending = row.status === "pendente";
+                    const isOpen = row.status === "aberto";
                     const badgeStyle = isPending
                       ? "bg-yellow-100 border-yellow-200 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-400"
-                      : "bg-accent/10 border-accent/20 text-accent dark:text-[#64d9bf]";
+                      : isOpen
+                        ? "bg-background-light border-border text-text-secondary dark:bg-[#382240] dark:border-[#452b4d] dark:text-[#bcaec4]"
+                        : "bg-accent/10 border-accent/20 text-accent dark:text-[#64d9bf]";
                     const icon = isPending ? (
                       <Lucide.Clock3 className="h-4 w-4" />
+                    ) : isOpen ? (
+                      <Lucide.Radio className="h-4 w-4" />
                     ) : (
                       <Lucide.CheckCircle2 className="h-4 w-4" />
                     );
@@ -131,7 +136,7 @@ export default function FechamentoPage() {
                         <td className="py-4 px-6">
                           <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-bold uppercase ${badgeStyle}`}>
                             {icon}
-                            {isPending ? "Pendente" : "Auditado"}
+                            {isPending ? "Pendente" : isOpen ? "Aberto" : "Fechado"}
                           </span>
                         </td>
                         <td className="py-4 px-6">

@@ -23,14 +23,12 @@ export async function listSalesByDate(
   await verifyAuthToken(token);
   const db = getDb();
 
-  console.log(date);
   const targetDate = sql`to_date(${date}, 'YYYY-MM-DD')`;
-  const dayExpr = sql`(${sales.createdAt} at time zone 'America/Sao_Paulo')::date`;
 
   const rows = await db
     .select({
       id: sales.id,
-      createdAt: sql<Date>`(${sales.createdAt} at time zone 'America/Sao_Paulo')`,
+      createdAt: sales.createdAt,
       totalAmount: sales.totalAmount,
       changeAmount: sales.changeAmount,
       totalItems: sql<number>`coalesce(sum(${saleItems.quantity}), 0)`.as(
@@ -41,7 +39,7 @@ export async function listSalesByDate(
     .from(sales)
     .leftJoin(saleItems, eq(sales.id, saleItems.saleId))
     .leftJoin(users, eq(users.id, sales.createdBy))
-    .where(eq(dayExpr, targetDate))
+    .where(eq(sales.day, targetDate))
     .groupBy(
       sales.id,
       users.name,

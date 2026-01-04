@@ -57,12 +57,12 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const mainNavigation: NavItem[] = [
     { label: "Vendas", icon: ShoppingCartIcon, href: "/vendas" },
     { label: "Histórico", icon: History, href: "/historico" },
-    { label: "Abertura de Caixa", icon: LockOpen, href: "/abertura" },
-    { label: "Fechamento de Caixa", icon: Lock, href: "/fechamento" },
     { label: "Sangria de Caixa", icon: WalletMinimal, href: "/sangrias" },
   ];
 
   const adminNavigation: NavItem[] = [
+    { label: "Abertura de Caixa", icon: LockOpen, href: "/abertura" },
+    { label: "Fechamento de Caixa", icon: Lock, href: "/fechamento" },
     { label: "Relatórios de Vendas", icon: BarChart3, href: "#" },
     { label: "Clientes", icon: Users, href: "/clientes" },
     { label: "Gerenciamento de Usuários", icon: UserCog, href: "/usuarios" },

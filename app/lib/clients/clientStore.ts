@@ -28,6 +28,7 @@ export function clientStore() {
     createdBy: string;
   }) => {
     const id = generateShortId();
+    const createdAt = new Date();
     const [created] = await db
       .insert(clients)
       .values({
@@ -36,6 +37,8 @@ export function clientStore() {
         phone: input.phone,
         birthday: input.birthday,
         createdBy: input.createdBy,
+        createdAt,
+        updatedAt: createdAt,
       })
       .returning({
         id: clients.id,
@@ -54,13 +57,14 @@ export function clientStore() {
     phone: string;
     birthday: Date;
   }) => {
+    const now = new Date();
     const [updated] = await db
       .update(clients)
       .set({
         name: input.name,
         phone: input.phone,
         birthday: input.birthday,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(and(eq(clients.id, input.id), isNull(clients.deletedAt)))
       .returning({

@@ -1,13 +1,11 @@
 import { pgTable, text, timestamp, date } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export const categories = pgTable("categories", {
+export const closings = pgTable("closings", {
   id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  icon: text("icon").notNull(),
-  createdBy: text("created_by").notNull(),
+  observation: text("observation"),
+  closedBy: text("closed_by").notNull(),
   day: date("day", { mode: "date" }).default(sql`now()::date`).notNull(),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
 });

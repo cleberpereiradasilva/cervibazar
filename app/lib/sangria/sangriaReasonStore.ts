@@ -2,7 +2,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { sangriaReasons } from "../db/schema/sangriaReasons";
 import { generateShortId } from "../id/generateShortId";
-import { nowInSaoPaulo } from "../time/nowInSaoPaulo";
 
 export function sangriaReasonStore() {
   const db = getDb();
@@ -22,7 +21,7 @@ export function sangriaReasonStore() {
 
   const add = async (input: { name: string; createdBy: string }) => {
     const id = generateShortId();
-    const createdAt = nowInSaoPaulo();
+    const createdAt = new Date();
     const [created] = await db
       .insert(sangriaReasons)
       .values({
@@ -42,7 +41,7 @@ export function sangriaReasonStore() {
   };
 
   const update = async (input: { id: string; name: string }) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [updated] = await db
       .update(sangriaReasons)
       .set({
@@ -65,7 +64,7 @@ export function sangriaReasonStore() {
   };
 
   const remove = async (id: string) => {
-    const now = nowInSaoPaulo();
+    const now = new Date();
     const [existing] = await db
       .select({
         id: sangriaReasons.id,
