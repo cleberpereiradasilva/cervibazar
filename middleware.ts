@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyAuthToken } from "./app/lib/auth/jwt";
 
+const PUBLIC_FILE = /\.(.*)$/;
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rotas públicas
   if (
+    PUBLIC_FILE.test(pathname) ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||

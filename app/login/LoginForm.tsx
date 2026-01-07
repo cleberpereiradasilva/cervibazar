@@ -28,6 +28,11 @@ export default function LoginForm() {
       <Toaster richColors position="top-right" duration={2000} />
       <Card className="p-8 shadow-xl">
         <div className="mb-8 text-center">
+          <img
+            src="/logo-cervi.png"
+            alt="Cervi Bazar"
+            className="mx-auto mb-4 h-auto w-36 object-contain"
+          />
           <h2 className="text-2xl font-black tracking-tight text-text-main dark:text-white">
             Acessar Sistema
           </h2>
