@@ -98,13 +98,6 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-text-main: #f7f2fb;
-    --color-text-secondary: #bcaec4;
-  }
-}
-
 body {
   background: var(--color-background-light);
   color: var(--color-text-main);
