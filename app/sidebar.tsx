@@ -121,17 +121,22 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               Administração
             </p>
           )}
-          {adminNavigation.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              aria-label={item.label}
-              className={`group flex items-center gap-3 rounded-xl ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"} text-text-secondary transition-all hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-[#bcaec4] dark:hover:bg-[#452b4d] dark:hover:text-white`}
-            >
-              <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
-              {!collapsed && <span className="text-sm font-bold">{item.label}</span>}
-            </Link>
-          ))}
+          {adminNavigation.map((item) => {
+            const isActive = item.href !== "#" && pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                aria-label={item.label}
+                className={`group flex items-center gap-3 rounded-xl ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"} text-text-secondary transition-all hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-[#bcaec4] dark:hover:bg-[#452b4d] dark:hover:text-white ${
+                  isActive ? "bg-primary/10 text-primary shadow-sm dark:text-white" : ""
+                }`}
+              >
+                <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                {!collapsed && <span className="text-sm font-bold">{item.label}</span>}
+              </Link>
+            );
+          })}
         </div>
       </ScrollArea>
       <div className="border-t border-border p-4 dark:border-[#452b4d]">
