@@ -87,9 +87,11 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const SidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex h-24 items-center justify-center border-b border-border bg-surface-light px-6 dark:border-[#452b4d] dark:bg-surface-dark">
-        <span className="text-lg font-extrabold uppercase tracking-wider text-primary">
-          {collapsed ? "CB" : "Cervi Bazar"}
-        </span>
+        <img
+          src="/logo-cervi.png"
+          alt="Cervi Bazar"
+          className={`${collapsed ? "h-12 w-12" : "h-auto w-[140px]"} object-contain`}
+        />
       </div>
       <ScrollArea className="flex-1 px-2 py-5">
         <nav className="space-y-2">
