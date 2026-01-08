@@ -16,7 +16,7 @@ export function useLogin() {
         // Salva token em cookie acessível no client
         const attrs = `path=/; SameSite=Lax; ${
           process.env.NODE_ENV === "production" ? "Secure;" : ""
-        } max-age=${60 * 60}`;
+        } max-age=${60 * 60 * 3}`;
         document.cookie = `auth_token=${encodeURIComponent(result.token)}; ${attrs}`;
         document.cookie = `user_name=${encodeURIComponent(result.name)}; ${attrs}`;
         document.cookie = `user_role=${encodeURIComponent(result.role)}; ${attrs}`;

@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 
 const issuer = "cervi-bazar";
 const audience = "cervi-bazar-app";
-const EXPIRATION = "1h";
+const EXPIRATION = "3h";
 
 function getSecret() {
   const secret = process.env.JWT_SECRET;
