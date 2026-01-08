@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { searchClients } from "@/app/actions/clients/searchClients";
 import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { createSale } from "@/app/actions/sales/createSale";
+import { login } from "@/app/actions/auth/login";
 
 type LineItem = {
   id: string;
@@ -58,6 +59,11 @@ export default function SaleForm() {
   const [suggestions, setSuggestions] = useState<ClientSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [phoneQuery, setPhoneQuery] = useState("");
+  const [authNeeded, setAuthNeeded] = useState(false);
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     setItems(
@@ -96,6 +102,41 @@ export default function SaleForm() {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     submitSale();
+  };
+
+  const setAuthCookies = (tokenData: {
+    token: string;
+    name: string;
+    role: string;
+    id: string;
+    username: string;
+  }) => {
+    const attrs = `path=/; SameSite=Lax; ${
+      process.env.NODE_ENV === "production" ? "Secure;" : ""
+    } max-age=${60 * 60 * 3}`;
+    document.cookie = `auth_token=${encodeURIComponent(tokenData.token)}; ${attrs}`;
+    document.cookie = `user_name=${encodeURIComponent(tokenData.name)}; ${attrs}`;
+    document.cookie = `user_role=${encodeURIComponent(tokenData.role)}; ${attrs}`;
+    document.cookie = `user_id=${encodeURIComponent(tokenData.id)}; ${attrs}`;
+    document.cookie = `user_username=${encodeURIComponent(tokenData.username)}; ${attrs}`;
+  };
+
+  const handleInlineLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAuthError(null);
+    try {
+      setAuthLoading(true);
+      const result = await login({ username: authUsername, password: authPassword });
+      setAuthCookies(result);
+      setAuthNeeded(false);
+      setAuthUsername("");
+      setAuthPassword("");
+      toast.success("Sessão restaurada. Envie a venda novamente.");
+    } catch (error: any) {
+      setAuthError(error?.message || "Usuário ou senha inválidos.");
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -183,7 +224,10 @@ export default function SaleForm() {
       }
       try {
         const token = getClientToken();
-        if (!token) return;
+        if (!token) {
+          setAuthNeeded(true);
+          return;
+        }
         const result = await searchClients(token, phoneQuery);
         setSuggestions(result);
         setShowSuggestions(result.length > 0);
@@ -202,6 +246,7 @@ export default function SaleForm() {
     const token = getClientToken();
     if (!token) {
       toast.error("Sessão expirada. Faça login novamente.");
+      setAuthNeeded(true);
       return;
     }
 
@@ -261,7 +306,73 @@ export default function SaleForm() {
   };
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
+    <>
+      {authNeeded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface-light p-6 shadow-2xl dark:bg-surface-dark">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase text-primary">Sessão expirada</p>
+                <h3 className="text-lg font-black text-text-main dark:text-white">
+                  Faça login sem perder os dados
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary hover:bg-primary/10 dark:text-[#bcaec4]"
+                onClick={() => setAuthNeeded(false)}
+                aria-label="Fechar"
+              >
+                <Lucide.X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-text-secondary dark:text-[#bcaec4]" htmlFor="auth-username">
+                  Usuário
+                </label>
+                <Input
+                  id="auth-username"
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  placeholder="Seu usuário"
+                  disabled={authLoading}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-text-secondary dark:text-[#bcaec4]" htmlFor="auth-password">
+                  Senha
+                </label>
+                <Input
+                  id="auth-password"
+                  type="password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={authLoading}
+                />
+              </div>
+              {authError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-200">
+                  {authError}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleInlineLogin}
+                  className="flex-1 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary/90 disabled:opacity-70"
+                  disabled={authLoading || !authUsername || !authPassword}
+                >
+                  {authLoading ? "Entrando..." : "Entrar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <form className="space-y-6" onSubmit={handleSubmit}>
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-6 text-text-main dark:text-white">
           <Lucide.User className="h-5 w-5 text-primary" />
@@ -633,5 +744,6 @@ export default function SaleForm() {
         </div>
       </section>
     </form>
+    </>
   );
 }
