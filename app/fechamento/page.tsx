@@ -63,6 +63,7 @@ export default function FechamentoPage() {
               type="date"
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
+              lang="pt-BR"
               className="h-12 rounded-xl border border-[#e6e1e8] bg-white px-3 text-sm font-semibold text-text-main shadow-sm focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-surface-dark dark:text-white"
             />
           </div>

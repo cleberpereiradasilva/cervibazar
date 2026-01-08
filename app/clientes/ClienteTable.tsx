@@ -24,7 +24,7 @@ type ClienteTableProps = {
 
 function formatDate(date: Date) {
   const d = new Date(date);
-  return d.toLocaleDateString("pt-BR");
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(d);
 }
 
 function formatPhoneDisplay(phone: string) {

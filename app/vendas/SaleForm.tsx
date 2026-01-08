@@ -12,8 +12,9 @@ import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { createSale } from "@/app/actions/sales/createSale";
 import { login } from "@/app/actions/auth/login";
 
-type LineItem = {
+type CartItem = {
   id: string;
+  categoryId: string;
   name: string;
   icon: string;
   quantity: number;
@@ -42,7 +43,11 @@ function getIcon(icon: string) {
 
 export default function SaleForm() {
   const { categories } = useCategories();
-  const [items, setItems] = useState<LineItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [entryQuantity, setEntryQuantity] = useState<number>(1);
+  const [entryPrice, setEntryPrice] = useState<number>(0);
+  const [cartOpen, setCartOpen] = useState(false);
   const [customer, setCustomer] = useState<Customer>({ name: "", phone: "", birthDate: "" });
   const [payments, setPayments] = useState<Record<PaymentMethod, number>>({
     dinheiro: 0,
@@ -66,37 +71,62 @@ export default function SaleForm() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    setItems(
-      categories.map((cat) => ({
-        id: cat.id,
-        name: cat.name,
-        icon: cat.icon,
-        quantity: 0,
-        price: 0,
-      }))
-    );
-  }, [categories]);
+    if (categories.length && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
+
+  const totalQuantity = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
 
   const total = useMemo(
     () =>
-      items.reduce((sum, item) => {
+      cartItems.reduce((sum, item) => {
         const line = item.quantity * item.price;
         return sum + (Number.isNaN(line) ? 0 : line);
       }, 0),
-    [items]
+    [cartItems]
   );
 
-  const updateItem = (id: string, field: "quantity" | "price", value: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item
-      )
-    );
+  const handleAddToCart = () => {
+    if (!selectedCategoryId) {
+      toast.error("Selecione uma categoria.");
+      return;
+    }
+    if (!entryQuantity || entryQuantity <= 0) {
+      toast.error("Informe a quantidade.");
+      return;
+    }
+    if (!entryPrice || entryPrice <= 0) {
+      toast.error("Informe o preço.");
+      return;
+    }
+
+    const category = categories.find((c) => c.id === selectedCategoryId);
+    if (!category) {
+      toast.error("Categoria inválida.");
+      return;
+    }
+
+    const newItem: CartItem = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      categoryId: category.id,
+      name: category.name,
+      icon: category.icon,
+      quantity: entryQuantity,
+      price: entryPrice,
+    };
+
+    setCartItems((prev) => [...prev, newItem]);
+    setCartOpen(true);
+    setEntryQuantity(1);
+    setEntryPrice(0);
+  };
+
+  const removeCartItem = (id: string) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -142,7 +172,9 @@ export default function SaleForm() {
   const resetForm = () => {
     setCustomer({ name: "", phone: "", birthDate: "" });
     setBirthParts({ year: 0, month: 0, day: 0 });
-    setItems((prev) => prev.map((i) => ({ ...i, quantity: 0, price: 0 })));
+    setCartItems([]);
+    setEntryQuantity(1);
+    setEntryPrice(0);
     setPayments({ credito: 0, debito: 0, dinheiro: 0, pix: 0 });
     setSubmissionState("idle");
   };
@@ -239,6 +271,25 @@ export default function SaleForm() {
     return () => clearTimeout(handler);
   }, [phoneQuery]);
 
+  const normalizeBirthday = (raw: Date | string | null | undefined) => {
+    if (!raw) return "";
+    if (typeof raw === "string") return raw.slice(0, 10);
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+      return raw.toISOString().slice(0, 10);
+    }
+    return "";
+  };
+
+  const splitBirthday = (value: string) => {
+    if (!value) return { year: 0, month: 0, day: 0 };
+    const [y, m, d] = value.split("-").map((v) => Number(v));
+    return {
+      year: y || 0,
+      month: m || 0,
+      day: d || 0,
+    };
+  };
+
   const disableAll = submissionState === "submitting";
   const lockNonItems = submissionState === "failed";
 
@@ -250,13 +301,11 @@ export default function SaleForm() {
       return;
     }
 
-    const itemsPayload = items
-      .filter((item) => item.quantity > 0 && item.price > 0)
-      .map((item) => ({
-        categoryId: item.id,
-        quantity: item.quantity,
-        price: item.price,
-      }));
+    const itemsPayload = cartItems.map((item) => ({
+      categoryId: item.categoryId,
+      quantity: item.quantity,
+      price: item.price,
+    }));
 
     if (!customer.phone.trim()) {
       toast.error("Informe o telefone do cliente.");
@@ -411,23 +460,14 @@ export default function SaleForm() {
                       type="button"
                       className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-primary/5 dark:hover:bg-[#382240]"
                       onClick={() => {
+                        const normalizedBirthday = normalizeBirthday(sug.birthday as Date | string | null | undefined);
+                        const parts = splitBirthday(normalizedBirthday);
                         setCustomer({
                           name: sug.name,
                           phone: formatPhone(sug.phone),
-                          birthDate: sug.birthday
-                            ? new Date(sug.birthday).toISOString().slice(0, 10)
-                            : "",
+                          birthDate: normalizedBirthday,
                         });
-                        if (sug.birthday) {
-                          const date = new Date(sug.birthday);
-                          setBirthParts({
-                            year: date.getFullYear(),
-                            month: date.getMonth() + 1,
-                            day: date.getDate(),
-                          });
-                        } else {
-                          setBirthParts({ year: 0, month: 0, day: 0 });
-                        }
+                        setBirthParts(parts);
                         setShowSuggestions(false);
                       }}
                     >
@@ -526,99 +566,190 @@ export default function SaleForm() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-text-main dark:text-white">
             <Lucide.ShoppingCart className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">Categorias</h3>
+            <h3 className="text-lg font-bold">Itens da Venda</h3>
           </div>
           <span className="text-xs font-semibold rounded-full bg-secondary/20 px-3 py-1 text-text-main dark:text-white">
-            {items.length} categorias
+            {cartItems.length} linha{cartItems.length === 1 ? "" : "s"} no carrinho
           </span>
         </div>
         <Separator />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {items.map((item) => {
-            const Icon = getIcon(item.icon);
-            const lineTotal = item.quantity * item.price || 0;
-            return (
-              <div
-                key={item.id}
-                className="group rounded-xl border border-border bg-background-light p-4 transition hover:border-primary/40 hover:bg-primary/5 dark:border-[#452b4d] dark:bg-background-dark dark:hover:bg-[#382240]"
-              >
-                <div className="flex flex-col md:grid md:grid-cols-12 gap-4 items-center">
-                  <div className="w-full md:col-span-4 flex items-center gap-3">
-                    <div className="size-9 rounded-full bg-white dark:bg-surface-dark flex items-center justify-center text-primary shadow-sm">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="font-bold text-text-main dark:text-white text-sm">
-                      {item.name}
-                    </span>
-                  </div>
-                  <div className="w-full md:col-span-3 flex md:justify-center">
-                    <div className="flex items-center justify-center w-full max-w-[140px] rounded-xl border border-border bg-white dark:border-[#452b4d] dark:bg-surface-dark overflow-hidden">
-                      <button
-                        type="button"
-                        className="w-11 h-10 flex items-center justify-center text-text-secondary hover:bg-gray-100 dark:hover:bg-[#452b4d]"
-                        onClick={() =>
-                          updateItem(item.id, "quantity", Math.max(0, item.quantity - 1))
-                        }
-                        tabIndex={0}
-                        disabled={disableAll}
-                      >
-                        <Lucide.Minus className="h-4 w-4" />
-                      </button>
-                      <input
-                        className="w-full text-center border-none bg-transparent p-0 text-text-main dark:text-white font-bold text-lg focus:ring-0 appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:appearance-none"
-                        type="number"
-                        value={item.quantity}
-                        min={0}
-                        onChange={(e) =>
-                          updateItem(item.id, "quantity", Math.max(0, Number(e.target.value)))
-                        }
-                        tabIndex={0}
-                        disabled={disableAll}
-                      />
-                      <button
-                        type="button"
-                        className="w-11 h-10 flex items-center justify-center text-text-secondary hover:bg-gray-100 dark:hover:bg-[#452b4d]"
-                        onClick={() => updateItem(item.id, "quantity", item.quantity + 1)}
-                        tabIndex={0}
-                        disabled={disableAll}
-                      >
-                        <Lucide.Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="w-full md:col-span-3">
-                    <div className="relative w-full">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm font-medium">
-                        R$
-                      </span>
-                      <Input
-                        className="pl-9"
-                        placeholder="0,00"
-                        value={item.price || ""}
-                        onChange={(e) =>
-                          updateItem(item.id, "price", Math.max(0, Number(e.target.value)))
-                        }
-                        inputMode="decimal"
-                        tabIndex={0}
-                        disabled={disableAll}
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full md:col-span-2 flex justify-between md:justify-end items-center">
-                    <span className="text-xs font-bold text-text-secondary mr-2 uppercase md:hidden lg:block xl:hidden">
-                      Total:
-                    </span>
-                    <span className="font-bold text-text-main dark:text-white opacity-60 group-hover:opacity-100">
-                      {lineTotal.toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })}
-                    </span>
-                  </div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto] items-end">
+            <div className="space-y-1">
+              <label className="ml-1 text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+                Categoria
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
+                  <Lucide.Tag className="h-4 w-4" />
+                </span>
+                <select
+                  className="h-11 w-full rounded-xl border border-[#e6e1e8] bg-background-light pl-10 pr-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                  value={selectedCategoryId}
+                  onChange={(e) => setSelectedCategoryId(e.target.value)}
+                  disabled={disableAll}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="ml-1 text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+                Quantidade
+              </label>
+              <div className="flex items-center rounded-xl border border-border bg-white dark:border-[#452b4d] dark:bg-surface-dark">
+                <button
+                  type="button"
+                  className="h-11 w-11 text-text-secondary hover:bg-gray-100 dark:hover:bg-[#452b4d]"
+                  onClick={() => setEntryQuantity((q) => Math.max(1, q - 1))}
+                  disabled={disableAll}
+                >
+                  <Lucide.Minus className="mx-auto h-4 w-4" />
+                </button>
+                <input
+                  className="h-11 w-full flex-1 border-none bg-transparent text-center text-lg font-bold text-text-main focus:ring-0 [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:appearance-none dark:text-white"
+                  type="number"
+                  min={1}
+                  value={entryQuantity}
+                  onChange={(e) => setEntryQuantity(Math.max(1, Number(e.target.value)))}
+                  disabled={disableAll}
+                />
+                <button
+                  type="button"
+                  className="h-11 w-11 text-text-secondary hover:bg-gray-100 dark:hover:bg-[#452b4d]"
+                  onClick={() => setEntryQuantity((q) => q + 1)}
+                  disabled={disableAll}
+                >
+                  <Lucide.Plus className="mx-auto h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="ml-1 text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+                Preço
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm font-medium">
+                  R$
+                </span>
+                <Input
+                  className="pl-9"
+                  placeholder="0,00"
+                  value={entryPrice || ""}
+                  onChange={(e) => setEntryPrice(Math.max(0, Number(e.target.value)))}
+                  inputMode="decimal"
+                  disabled={disableAll}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
+                <div className="text-xs text-text-secondary dark:text-[#bcaec4]">Total</div>
+                <div className="text-lg font-black">
+                  {(entryQuantity * entryPrice || 0).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
                 </div>
               </div>
-            );
-          })}
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-70"
+                disabled={disableAll}
+              >
+                <Lucide.Plus className="h-4 w-4" />
+                Adicionar
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-background-light p-4 dark:border-[#452b4d] dark:bg-background-dark">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between"
+              onClick={() => setCartOpen((open) => !open)}
+              aria-expanded={cartOpen}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary/10 p-2 text-primary">
+                  <Lucide.ShoppingBag className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold uppercase text-text-secondary dark:text-[#bcaec4]">
+                    Carrinho
+                  </p>
+                  <p className="text-sm font-bold text-text-main dark:text-white">
+                    {totalQuantity} item{totalQuantity === 1 ? "" : "s"} ·{" "}
+                    {total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+              </div>
+              <Lucide.ChevronDown
+                className={`h-5 w-5 text-text-secondary transition-transform ${cartOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {cartOpen && (
+              <div className="mt-4 space-y-3 max-h-64 overflow-y-auto pr-1">
+                {cartItems.length === 0 ? (
+                  <p className="text-sm font-semibold text-text-secondary dark:text-[#bcaec4]">
+                    Nenhum item adicionado ainda.
+                  </p>
+                ) : (
+                  cartItems.map((item) => {
+                    const Icon = getIcon(item.icon);
+                    const lineTotal = item.quantity * item.price;
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-xl border border-border bg-white px-3 py-2 dark:border-[#452b4d] dark:bg-surface-dark"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-full bg-primary/10 p-2 text-primary">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-text-main dark:text-white">
+                              {item.name}
+                            </p>
+                            <p className="text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
+                              {item.quantity} un ·{" "}
+                              {item.price.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-black text-text-main dark:text-white">
+                            {lineTotal.toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })}
+                          </span>
+                          <button
+                            type="button"
+                            className="rounded-full p-2 text-text-secondary hover:bg-gray-100 dark:hover:bg-[#452b4d]"
+                            onClick={() => removeCartItem(item.id)}
+                            disabled={disableAll}
+                            aria-label={`Remover ${item.name}`}
+                          >
+                            <Lucide.Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 

@@ -210,6 +210,7 @@ export default function RelatoriosClientPage() {
                 type="date"
                 value={start}
                 onChange={(event) => setDateRange({ start: event.target.value, end })}
+                lang="pt-BR"
                 className="w-full border-none bg-transparent p-0 text-sm font-bold text-text-main outline-none focus:ring-0 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
@@ -221,6 +222,7 @@ export default function RelatoriosClientPage() {
                 type="date"
                 value={end}
                 onChange={(event) => setDateRange({ start, end: event.target.value })}
+                lang="pt-BR"
                 className="w-full border-none bg-transparent p-0 text-sm font-bold text-text-main outline-none focus:ring-0 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>

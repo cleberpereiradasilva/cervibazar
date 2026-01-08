@@ -77,6 +77,7 @@ export default function HistoricoClientPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
+            lang="pt-BR"
             className="w-[170px]"
           />
           <Button variant="ghost" onClick={() => setSelectedDate(todayISO())} className="gap-2">

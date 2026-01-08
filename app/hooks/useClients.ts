@@ -59,7 +59,9 @@ export function useClients() {
         const token = getClientToken();
         if (!token) throw new Error("Sessão expirada. Faça login novamente.");
         const created = await createClient(token, input);
-        setClients((prev) => [...prev, created]);
+        setClients((prev) =>
+          [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+        );
         return { ok: true, error: null };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro ao salvar cliente.";
@@ -81,7 +83,9 @@ export function useClients() {
         if (!token) throw new Error("Sessão expirada. Faça login novamente.");
         const updated = await updateClient(token, { id, ...input });
         setClients((prev) =>
-          prev.map((client) => (client.id === id ? { ...client, ...updated } : client))
+          prev
+            .map((client) => (client.id === id ? { ...client, ...updated } : client))
+            .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
         );
         return { ok: true, error: null };
       } catch (err) {

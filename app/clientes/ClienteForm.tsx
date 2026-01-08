@@ -45,15 +45,20 @@ export default function ClienteForm({
   const [birthday, setBirthday] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
+  const formatDateForInput = (dateLike: Date | string | null | undefined) => {
+    if (!dateLike) return "";
+    if (typeof dateLike === "string") return dateLike.slice(0, 10);
+    if (dateLike instanceof Date && !Number.isNaN(dateLike.getTime())) {
+      return dateLike.toISOString().slice(0, 10);
+    }
+    return "";
+  };
+
   useEffect(() => {
     if (editingClient) {
       setName(editingClient.name);
       setPhone(formatPhone(editingClient.phone));
-      setBirthday(
-        editingClient.birthday instanceof Date
-          ? editingClient.birthday.toISOString().slice(0, 10)
-          : ""
-      );
+      setBirthday(formatDateForInput(editingClient.birthday));
     } else {
       setName("");
       setPhone("");
@@ -139,6 +144,7 @@ export default function ClienteForm({
               type="date"
               value={birthday}
               onChange={(e) => setBirthday(e.target.value)}
+              lang="pt-BR"
               tabIndex={0}
             />
             {fieldErrors.birthday && (
