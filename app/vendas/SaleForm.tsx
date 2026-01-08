@@ -466,13 +466,13 @@ export default function SaleForm() {
             <label className="block text-sm font-semibold mb-1 ml-1 text-text-secondary dark:text-[#bcaec4]" htmlFor="customer-birth">
               Data de Nascimento
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
                   <Lucide.Cake className="h-4 w-4" />
                 </span>
                 <select
-                  className="h-11 w-[130px] rounded-xl border border-[#e6e1e8] bg-background-light pl-9 pr-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                  className="h-11 w-full rounded-xl border border-[#e6e1e8] bg-background-light pl-9 pr-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
                   value={birthParts.year || ""}
                   onChange={(e) => handleBirthChange("year", Number(e.target.value))}
                   tabIndex={0}
@@ -487,7 +487,7 @@ export default function SaleForm() {
                 </select>
               </div>
               <select
-                className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                className="h-11 w-full rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
                 value={birthParts.month || ""}
                 onChange={(e) => handleBirthChange("month", Number(e.target.value))}
                 tabIndex={0}
@@ -501,7 +501,7 @@ export default function SaleForm() {
                 ))}
               </select>
               <select
-                className="h-11 w-[120px] rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
+                className="h-11 w-full rounded-xl border border-[#e6e1e8] bg-background-light px-3 text-sm font-semibold text-text-main focus:border-primary focus:outline-none focus:ring-0 dark:border-[#452b4d] dark:bg-background-dark dark:text-white"
                 value={birthParts.day || ""}
                 onChange={(e) => handleBirthChange("day", Number(e.target.value))}
                 tabIndex={0}

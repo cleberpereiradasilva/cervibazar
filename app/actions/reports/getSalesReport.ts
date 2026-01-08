@@ -113,7 +113,7 @@ async function getTimeline(
     .orderBy(asc(bucket));
 
   return rows.map((row) => ({
-    date: toISODate(new Date(row.bucket)),
+    date: toISODate(new Date(row.bucket as unknown as string)),
     totalAmount: Number(row.totalAmount ?? 0),
   }));
 }
@@ -141,7 +141,7 @@ async function getPaymentTimeline(
     .orderBy(asc(bucket));
 
   return rows.map((row) => ({
-    date: toISODate(new Date(row.bucket)),
+    date: toISODate(new Date(row.bucket as unknown as string)),
     credit: Number(row.credit ?? 0),
     debit: Number(row.debit ?? 0),
     cash: Number(row.cash ?? 0),

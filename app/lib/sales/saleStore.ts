@@ -45,6 +45,9 @@ export function saleStore() {
       throw new Error("Informe o telefone do cliente.");
     }
 
+    const now = new Date();
+    const day = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
     return db.transaction(async (tx) => {
       const clientsResult = await tx
         .select({
@@ -86,7 +89,7 @@ export function saleStore() {
       }
 
       const saleId = generateShortId();
-      const createdAt = new Date();
+      const createdAt = now;
 
       await tx.insert(sales).values({
         id: saleId,
@@ -99,6 +102,7 @@ export function saleStore() {
         pixAmount: payments.pix.toFixed(2),
         changeAmount: changeAmount.toFixed(2),
         pendingAmount: pendingAmount.toFixed(2),
+        day,
         createdAt,
         updatedAt: createdAt,
       });
@@ -111,6 +115,7 @@ export function saleStore() {
           quantity: item.quantity,
           unitPrice: item.price.toFixed(2),
           lineTotal: (item.quantity * item.price).toFixed(2),
+          day,
           createdAt,
         }))
       );

@@ -327,18 +327,12 @@ export default function RelatoriosClientPage() {
                   {
                     min: 0,
                     tickLabelStyle: { fill: axisColor, fontWeight: 700, fontSize: 12 },
-                    valueFormatter: (val) => Number(val ?? 0).toLocaleString("pt-BR"),
+                    valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
                   },
                 ]}
                 margin={{ top: 16, right: 20, bottom: 30, left: 90 }}
                 slotProps={{
-                  legend: { hidden: true },
-                  tooltip: {
-                    valueFormatter: (val) => Number(val ?? 0).toLocaleString("pt-BR"),
-                  },
-                  leftAxis: {
-                    tickLabelStyle: { fontSize: 12, fontWeight: 700 },
-                  },
+                  tooltip: {},
                 }}
                 sx={{
                   "--Charts-gridColor": "rgba(45,27,51,0.12)",
@@ -357,6 +351,7 @@ export default function RelatoriosClientPage() {
                       label: "Vendas",
                       area: trendView === "area",
                       showMark: trendView !== "area",
+                      valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
                     },
                   ]}
                   xAxis={[
@@ -369,22 +364,19 @@ export default function RelatoriosClientPage() {
                   yAxis={[
                     {
                       min: 0,
-                      valueFormatter: (value) => Number(value ?? 0).toLocaleString("pt-BR"),
+                      valueFormatter: (value: number | null) =>
+                        Number(value ?? 0).toLocaleString("pt-BR"),
                     },
                   ]}
-                margin={{ top: 20, right: 24, bottom: 30, left: 90 }}
-                slotProps={{
-                  legend: { hidden: true },
-                  tooltip: {
-                    valueFormatter: (val) => Number(val ?? 0).toLocaleString("pt-BR"),
-                  },
-                  leftAxis: { tickLabelStyle: { fontSize: 12, fontWeight: 700 } },
-                }}
-                sx={{
-                  "--Charts-gridColor": "rgba(45,27,51,0.15)",
-                  color: axisColor,
-                  ".MuiChartsAxis-line": { stroke: "rgba(45,27,51,0.15)" },
-                  ".MuiChartsAxis-tick": { stroke: "rgba(45,27,51,0.25)" },
+                  margin={{ top: 20, right: 24, bottom: 30, left: 90 }}
+                  slotProps={{
+                    tooltip: {},
+                  }}
+                  sx={{
+                    "--Charts-gridColor": "rgba(45,27,51,0.15)",
+                    color: axisColor,
+                    ".MuiChartsAxis-line": { stroke: "rgba(45,27,51,0.15)" },
+                    ".MuiChartsAxis-tick": { stroke: "rgba(45,27,51,0.25)" },
                   ".MuiChartsAxis-tickLabel": { fill: axisColor },
                   }}
                 />
@@ -453,9 +445,7 @@ export default function RelatoriosClientPage() {
                   },
                 ]}
                 margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                slotProps={{
-                  legend: { hidden: false },
-                }}
+                slotProps={{}}
               />
             </div>
           ) : (
@@ -538,26 +528,41 @@ export default function RelatoriosClientPage() {
                 },
               ]}
               series={[
-                { dataKey: "credit", label: "Crédito", color: "#92278f" },
-                { dataKey: "debit", label: "Débito", color: "#8bc4f0" },
-                { dataKey: "cash", label: "Dinheiro", color: "#4a9c8a" },
-                { dataKey: "pix", label: "Pix", color: "#f59e0b" },
+                {
+                  dataKey: "credit",
+                  label: "Crédito",
+                  color: "#92278f",
+                  valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
+                },
+                {
+                  dataKey: "debit",
+                  label: "Débito",
+                  color: "#8bc4f0",
+                  valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
+                },
+                {
+                  dataKey: "cash",
+                  label: "Dinheiro",
+                  color: "#4a9c8a",
+                  valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
+                },
+                {
+                  dataKey: "pix",
+                  label: "Pix",
+                  color: "#f59e0b",
+                  valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
+                },
               ]}
               margin={{ top: 16, right: 20, bottom: 30, left: 90 }}
               slotProps={{
-                legend: { direction: "row", position: { vertical: "top", horizontal: "right" } },
-                tooltip: {
-                  valueFormatter: (val) => Number(val ?? 0).toLocaleString("pt-BR"),
-                },
-                leftAxis: {
-                  tickLabelStyle: { fontSize: 12, fontWeight: 700 },
-                },
+                legend: { position: { vertical: "top", horizontal: "end" } },
+                tooltip: {},
               }}
               yAxis={[
                 {
                   min: 0,
                   tickLabelStyle: { fill: axisColor, fontWeight: 700, fontSize: 12 },
-                  valueFormatter: (val) => Number(val ?? 0).toLocaleString("pt-BR"),
+                  valueFormatter: (val: number | null) => Number(val ?? 0).toLocaleString("pt-BR"),
                 },
               ]}
               sx={{
@@ -588,6 +593,7 @@ export default function RelatoriosClientPage() {
                     color: "#92278f",
                     area: false,
                     showMark: true,
+                    valueFormatter: (v: number | null) => Number(v ?? 0).toLocaleString("pt-BR"),
                   },
                   {
                     data: paymentDataset.map((d) => d.debit),
@@ -595,6 +601,7 @@ export default function RelatoriosClientPage() {
                     color: "#8bc4f0",
                     area: false,
                     showMark: true,
+                    valueFormatter: (v: number | null) => Number(v ?? 0).toLocaleString("pt-BR"),
                   },
                   {
                     data: paymentDataset.map((d) => d.cash),
@@ -602,6 +609,7 @@ export default function RelatoriosClientPage() {
                     color: "#4a9c8a",
                     area: false,
                     showMark: true,
+                    valueFormatter: (v: number | null) => Number(v ?? 0).toLocaleString("pt-BR"),
                   },
                   {
                     data: paymentDataset.map((d) => d.pix),
@@ -609,6 +617,7 @@ export default function RelatoriosClientPage() {
                     color: "#f59e0b",
                     area: false,
                     showMark: true,
+                    valueFormatter: (v: number | null) => Number(v ?? 0).toLocaleString("pt-BR"),
                   },
                 ]}
                 xAxis={[
@@ -619,15 +628,15 @@ export default function RelatoriosClientPage() {
                   },
                 ]}
                 yAxis={[
-                  { min: 0, valueFormatter: (value) => Number(value ?? 0).toLocaleString("pt-BR") },
+                  {
+                    min: 0,
+                    valueFormatter: (value: number | null) => Number(value ?? 0).toLocaleString("pt-BR"),
+                  },
                 ]}
                 margin={{ top: 16, right: 20, bottom: 30, left: 90 }}
                 slotProps={{
-                  legend: { direction: "row", position: { vertical: "top", horizontal: "right" } },
-                  tooltip: {
-                    valueFormatter: (val) => Number(val ?? 0).toLocaleString("pt-BR"),
-                  },
-                  leftAxis: { tickLabelStyle: { fontSize: 12, fontWeight: 700 } },
+                  legend: { position: { vertical: "top", horizontal: "end" } },
+                  tooltip: {},
                 }}
                 sx={{
                   "--Charts-gridColor": "rgba(45,27,51,0.12)",
