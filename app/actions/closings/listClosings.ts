@@ -80,10 +80,10 @@ export async function listClosings(
   const db = getDb();
 
   const targetDate = sql`to_date(${date}, 'YYYY-MM-DD')`;
-  const saleDayExpr = sql`(s.created_at at time zone 'America/Sao_Paulo')::date`;
-  const openingDayExpr = sql`(c.created_at at time zone 'America/Sao_Paulo')::date`;
-  const sangriaDayExpr = sql`(sa.created_at at time zone 'America/Sao_Paulo')::date`;
-  const closingDayExpr = sql`(cl.created_at at time zone 'America/Sao_Paulo')::date`;
+  const saleDayExpr = sql`s.sale_date`;
+  const openingDayExpr = sql`c.day`;
+  const sangriaDayExpr = sql`sa.day`;
+  const closingDayExpr = sql`cl.day`;
 
   const query = sql<ListRow>`
     select

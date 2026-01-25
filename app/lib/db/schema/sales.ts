@@ -14,6 +14,7 @@ export const sales = pgTable("sales", {
   pixAmount: numeric("pix_amount", { precision: 12, scale: 2 }).default("0").notNull(),
   changeAmount: numeric("change_amount", { precision: 12, scale: 2 }).default("0").notNull(),
   pendingAmount: numeric("pending_amount", { precision: 12, scale: 2 }).default("0").notNull(),
+  saleDate: date("sale_date", { mode: "date" }).default(sql`now()::date`).notNull(),
   day: date("day", { mode: "date" }).default(sql`now()::date`).notNull(),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),

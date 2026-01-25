@@ -6,12 +6,13 @@ import { cashOpeningStore } from "@/app/lib/cash-openings/cashOpeningStore";
 
 export async function updateCashOpening(
   token: string,
-  input: { id: string; amount: string | number }
+  input: { id: string; amount: string | number; entryDate: string }
 ) {
   await verifyAuthToken(token);
   const payload = cashOpeningSchema().parse(input);
   return cashOpeningStore().update({
     id: payload.id!,
     amount: payload.amount,
+    entryDate: payload.entryDate,
   });
 }

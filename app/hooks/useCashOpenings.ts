@@ -10,12 +10,13 @@ import { getClientToken } from "@/app/lib/auth/getClientToken";
 export type CashOpening = {
   id: string;
   amount: string;
+  day: Date | string;
   createdAt: Date;
   createdBy: string;
   createdByName: string | null;
 };
 
-type CreateInput = { amount: string | number };
+type CreateInput = { amount: string | number; entryDate: string };
 
 export function useCashOpenings() {
   const [openings, setOpenings] = useState<CashOpening[]>([]);

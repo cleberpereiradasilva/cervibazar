@@ -6,7 +6,13 @@ import { sangriaStore } from "@/app/lib/sangria/sangriaStore";
 
 export async function updateSangria(
   token: string,
-  input: { id: string; reasonId: string; amount: number | string; observation?: string }
+  input: {
+    id: string;
+    reasonId: string;
+    amount: number | string;
+    entryDate: string;
+    observation?: string;
+  }
 ) {
   await verifyAuthToken(token);
   const payload = sangriaEntrySchema().parse(input);
@@ -14,6 +20,7 @@ export async function updateSangria(
     id: payload.id!,
     reasonId: payload.reasonId,
     amount: payload.amount,
+    entryDate: payload.entryDate,
     observation: payload.observation?.trim(),
   });
 }

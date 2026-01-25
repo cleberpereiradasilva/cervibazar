@@ -15,10 +15,23 @@ type SaleInput = {
   customer: { name: string; phone: string; birthDate?: string };
   items: SaleItemInput[];
   payments: { credito: number; debito: number; dinheiro: number; pix: number };
+  saleDate: string;
   userId: string;
 };
 
 const normalizePhone = (phone: string) => phone.replace(/\D/g, "");
+
+const parseSaleDate = (value: string) => {
+  const [y, m, d] = value.split("-").map(Number);
+  if (!y || !m || !d) {
+    throw new Error("Data da venda inválida.");
+  }
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Data da venda inválida.");
+  }
+  return date;
+};
 
 export function saleStore() {
   const db = getDb();
@@ -46,7 +59,7 @@ export function saleStore() {
     }
 
     const now = new Date();
-    const day = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const saleDay = parseSaleDate(input.saleDate);
 
     return db.transaction(async (tx) => {
       const clientsResult = await tx
@@ -102,7 +115,8 @@ export function saleStore() {
         pixAmount: payments.pix.toFixed(2),
         changeAmount: changeAmount.toFixed(2),
         pendingAmount: pendingAmount.toFixed(2),
-        day,
+        saleDate: saleDay,
+        day: saleDay,
         createdAt,
         updatedAt: createdAt,
       });
@@ -115,7 +129,8 @@ export function saleStore() {
           quantity: item.quantity,
           unitPrice: item.price.toFixed(2),
           lineTotal: (item.quantity * item.price).toFixed(2),
-          day,
+          saleDate: saleDay,
+          day: saleDay,
           createdAt,
         }))
       );

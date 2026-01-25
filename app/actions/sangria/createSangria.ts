@@ -7,7 +7,12 @@ import { SEED_ADMIN_ID } from "@/app/constants";
 
 export async function createSangria(
   token: string,
-  input: { reasonId: string; amount: number | string; observation?: string }
+  input: {
+    reasonId: string;
+    amount: number | string;
+    entryDate: string;
+    observation?: string;
+  }
 ) {
   const auth = await verifyAuthToken(token);
   const payload = sangriaEntrySchema().omit({ id: true }).parse(input);
@@ -16,6 +21,7 @@ export async function createSangria(
     reasonId: payload.reasonId,
     amount: payload.amount,
     createdBy: auth?.sub ?? SEED_ADMIN_ID,
+    entryDate: payload.entryDate,
     observation: payload.observation?.trim(),
   });
 }

@@ -8,6 +8,7 @@ export const saleItems = pgTable("sale_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
   lineTotal: numeric("line_total", { precision: 12, scale: 2 }).notNull(),
+  saleDate: date("sale_date", { mode: "date" }).default(sql`now()::date`).notNull(),
   day: date("day", { mode: "date" }).default(sql`now()::date`).notNull(),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
 });

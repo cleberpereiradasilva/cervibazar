@@ -16,7 +16,10 @@ const nameSchema = z
   .trim()
   .min(5, "Nome e sobrenome devem ter pelo menos 5 caracteres.")
   .max(120, "Nome e sobrenome devem ter no maximo 120 caracteres.")
-  .regex(/^[A-Za-z]+(?:\s+[A-Za-z]+)+$/, "Informe nome e sobrenome (apenas letras e espacos).");
+  .regex(
+    /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['-][A-Za-zÀ-ÖØ-öø-ÿ]+)*(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['-][A-Za-zÀ-ÖØ-öø-ÿ]+)*)+$/,
+    "Informe nome e sobrenome (letras, acentos, espacos, hifen e apostrofo)."
+  );
 
 const usernameSchema = z
   .string()

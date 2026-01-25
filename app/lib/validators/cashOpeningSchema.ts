@@ -16,9 +16,26 @@ const amountPreprocess = (value: unknown) => {
   return value;
 };
 
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+const isValidDate = (value: string) => {
+  const [y, m, d] = value.split("-").map(Number);
+  if (!y || !m || !d) return false;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return (
+    date.getUTCFullYear() === y &&
+    date.getUTCMonth() === m - 1 &&
+    date.getUTCDate() === d
+  );
+};
+
 export function cashOpeningSchema() {
   return z.object({
     id: z.string().min(6, "ID inválido.").optional(),
+    entryDate: z
+      .string({ required_error: "Data é obrigatória." })
+      .regex(dateRegex, "Data inválida.")
+      .refine(isValidDate, "Data inválida."),
     amount: z.preprocess(
       amountPreprocess,
       z

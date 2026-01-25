@@ -12,6 +12,7 @@ import { categories } from "@/app/lib/db/schema/categories";
 export type SaleDetail = {
   id: string;
   createdAt: Date;
+  saleDate: Date;
   totalAmount: string;
   creditAmount: string;
   debitAmount: string;
@@ -47,6 +48,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
     .select({
       id: sales.id,
       createdAt: sales.createdAt,
+      saleDate: sales.saleDate,
       totalAmount: sales.totalAmount,
       creditAmount: sales.creditAmount,
       debitAmount: sales.debitAmount,
@@ -85,6 +87,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
   return {
     id: sale.id,
     createdAt: sale.createdAt,
+    saleDate: sale.saleDate,
     totalAmount: sale.totalAmount,
     creditAmount: sale.creditAmount,
     debitAmount: sale.debitAmount,

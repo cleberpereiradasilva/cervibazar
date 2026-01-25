@@ -27,6 +27,10 @@ function todayISO() {
 export default function HistoricoClientPage() {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [debouncedName, setDebouncedName] = useState("");
+  const [debouncedPhone, setDebouncedPhone] = useState("");
   const [sales, setSales] = useState<SaleSummary[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -40,6 +44,14 @@ export default function HistoricoClientPage() {
   );
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedName(clientName.trim());
+      setDebouncedPhone(clientPhone.trim());
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [clientName, clientPhone]);
+
+  useEffect(() => {
     const fetchSales = async () => {
       const token = getClientToken();
       if (!token) {
@@ -48,7 +60,10 @@ export default function HistoricoClientPage() {
       }
       try {
         setLoading(true);
-        const result = await listSalesByDate(token, selectedDate);
+        const result = await listSalesByDate(token, selectedDate, {
+          clientName: debouncedName,
+          clientPhone: debouncedPhone,
+        });
         setSales(result);
       } catch (error: any) {
         toast.error(error?.message || "Erro ao carregar histórico.");
@@ -58,7 +73,19 @@ export default function HistoricoClientPage() {
     };
 
     void fetchSales();
-  }, [selectedDate]);
+  }, [selectedDate, debouncedName, debouncedPhone]);
+
+  const formatSaleDate = (raw: Date | string) => {
+    if (typeof raw === "string") {
+      const [y, m, d] = raw.split("-").map(Number);
+      if (y && m && d) return new Date(y, m - 1, d).toLocaleDateString("pt-BR");
+    }
+    const parsed = raw instanceof Date ? raw : new Date(raw);
+    const y = parsed.getUTCFullYear();
+    const m = parsed.getUTCMonth();
+    const d = parsed.getUTCDate();
+    return new Date(y, m, d).toLocaleDateString("pt-BR");
+  };
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -72,7 +99,20 @@ export default function HistoricoClientPage() {
             Consulte as vendas por data e visualize os detalhes.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+          <Input
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            placeholder="Nome do cliente"
+            className="w-full md:w-[220px]"
+          />
+          <Input
+            value={clientPhone}
+            onChange={(e) => setClientPhone(e.target.value)}
+            placeholder="Telefone do cliente"
+            inputMode="tel"
+            className="w-full md:w-[200px]"
+          />
           <Input
             type="date"
             value={selectedDate}
@@ -119,6 +159,8 @@ export default function HistoricoClientPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Data</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Telefone</TableHead>
                   <TableHead>Total de Itens</TableHead>
                   <TableHead>Valor Total</TableHead>
                   <TableHead>Vendedor</TableHead>
@@ -128,7 +170,7 @@ export default function HistoricoClientPage() {
               <TableBody>
                 {sales.map((sale) => {
                   const createdAt = new Date(sale.createdAt);
-                  const dateLabel = createdAt.toLocaleDateString("pt-BR");
+                  const dateLabel = formatSaleDate(sale.saleDate);
                   const timeLabel = createdAt.toLocaleTimeString("pt-BR", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -149,6 +191,12 @@ export default function HistoricoClientPage() {
                             <span className="text-xs text-text-secondary">às {timeLabel}</span>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-text-secondary dark:text-[#bcaec4]">
+                        {sale.clientName ?? "N/D"}
+                      </TableCell>
+                      <TableCell className="text-sm text-text-secondary dark:text-[#bcaec4]">
+                        {sale.clientPhone ?? "N/D"}
                       </TableCell>
                       <TableCell className="font-bold text-text-main dark:text-white">
                         {sale.totalItems}

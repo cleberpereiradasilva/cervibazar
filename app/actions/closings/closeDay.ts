@@ -19,8 +19,8 @@ export async function closeDay(token: string, input: CloseDayInput) {
 
   const { date } = input;
   const targetDate = sql`to_date(${date}, 'YYYY-MM-DD')`;
-  const saleDayExpr = sql`(sales.created_at at time zone 'America/Sao_Paulo')::date`;
-  const sangriaDayExpr = sql`(sangrias.created_at at time zone 'America/Sao_Paulo')::date`;
+  const saleDayExpr = sales.saleDate;
+  const sangriaDayExpr = sangrias.day;
 
   const closingId = generateShortId();
   const createdAt = new Date();

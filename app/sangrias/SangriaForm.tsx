@@ -9,13 +9,14 @@ import { Select } from "@/components/ui/select";
 import { sangriaEntrySchema } from "@/app/lib/validators/sangriaEntrySchema";
 import type { SangriaEntry } from "@/app/hooks/useSangrias";
 import type { SangriaReason } from "@/app/hooks/useSangriaReasons";
-import { Info, Save } from "lucide-react";
+import { Calendar, Info, Save } from "lucide-react";
 
 type SangriaFormProps = {
   reasons: SangriaReason[];
   onSubmit: (input: {
     reasonId: string;
     amount: string;
+    entryDate: string;
     observation?: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
   onCancel: () => void;
@@ -23,7 +24,27 @@ type SangriaFormProps = {
   saving: boolean;
 };
 
-type FieldErrors = Partial<Record<"reasonId" | "amount" | "observation", string>>;
+type FieldErrors = Partial<Record<"reasonId" | "amount" | "observation" | "entryDate", string>>;
+
+function todayISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function normalizeDate(raw: Date | string | null | undefined) {
+  if (!raw) return "";
+  if (typeof raw === "string") return raw.slice(0, 10);
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    const y = raw.getUTCFullYear();
+    const m = String(raw.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(raw.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return "";
+}
 
 export default function SangriaForm({
   reasons,
@@ -35,6 +56,7 @@ export default function SangriaForm({
   const [reasonId, setReasonId] = useState("");
   const [amount, setAmount] = useState("");
   const [observation, setObservation] = useState("");
+  const [entryDate, setEntryDate] = useState(todayISO());
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
@@ -42,10 +64,12 @@ export default function SangriaForm({
       setReasonId(editing.reasonId);
       setAmount(editing.amount ?? "");
       setObservation(editing.observation ?? "");
+      setEntryDate(normalizeDate(editing.day) || todayISO());
     } else {
       setReasonId("");
       setAmount("");
       setObservation("");
+      setEntryDate(todayISO());
     }
     setFieldErrors({});
   }, [editing]);
@@ -59,13 +83,13 @@ export default function SangriaForm({
     event.preventDefault();
     const parsed = sangriaEntrySchema()
       .omit({ id: true })
-      .safeParse({ reasonId, amount, observation });
+      .safeParse({ reasonId, amount, entryDate, observation });
 
     if (!parsed.success) {
       const newErrors: FieldErrors = {};
       parsed.error?.errors?.forEach((err) => {
         const field = err.path[0];
-        if (field === "reasonId" || field === "amount") {
+        if (field === "reasonId" || field === "amount" || field === "entryDate") {
           newErrors[field] = err.message;
         }
         if (field === "observation") {
@@ -80,6 +104,7 @@ export default function SangriaForm({
     await onSubmit({
       reasonId: parsed.data.reasonId,
       amount: amount,
+      entryDate: parsed.data.entryDate,
       observation: parsed.data.observation,
     });
   };
@@ -104,6 +129,29 @@ export default function SangriaForm({
             <p className="flex items-center gap-1 text-xs font-semibold text-red-600">
               <Info className="h-4 w-4" />
               {fieldErrors.reasonId}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="entryDate">Data da sangria</Label>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
+              <Calendar className="h-4 w-4" />
+            </span>
+            <Input
+              id="entryDate"
+              type="date"
+              value={entryDate}
+              onChange={(e) => setEntryDate(e.target.value)}
+              className="pl-10"
+              tabIndex={0}
+            />
+          </div>
+          {fieldErrors.entryDate && (
+            <p className="flex items-center gap-1 text-xs font-semibold text-red-600">
+              <Info className="h-4 w-4" />
+              {fieldErrors.entryDate}
             </p>
           )}
         </div>

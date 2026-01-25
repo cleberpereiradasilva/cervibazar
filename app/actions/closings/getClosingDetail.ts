@@ -98,7 +98,7 @@ export async function getClosingDetail(
         coalesce(sum(si.quantity), 0) as items
       from sales s
       left join sale_items si on si.sale_id = s.id
-      where s.day = ${targetDate}
+      where s.sale_date = ${targetDate}
       group by s.id, s.created_at, s.total_amount, s.change_amount
     )
     select
@@ -134,7 +134,7 @@ export async function getClosingDetail(
       coalesce(sum(pix_amount), 0) as pix,
       coalesce(sum(pending_amount), 0) as pending
     from sales s
-    where s.day = ${targetDate}
+    where s.sale_date = ${targetDate}
   `;
 
   const categoriesQuery = sql<CategoryTotals>`
@@ -145,7 +145,7 @@ export async function getClosingDetail(
     from sales s
     left join sale_items si on si.sale_id = s.id
     left join categories cat on cat.id = si.category_id
-    where s.day = ${targetDate}
+    where s.sale_date = ${targetDate}
     group by cat.name
     order by category asc;
   `;

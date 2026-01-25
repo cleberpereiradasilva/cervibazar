@@ -41,6 +41,14 @@ function getIcon(icon: string) {
   return IconComp;
 }
 
+function todayISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function SaleForm() {
   const { categories } = useCategories();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -49,6 +57,7 @@ export default function SaleForm() {
   const [entryPrice, setEntryPrice] = useState<number>(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [customer, setCustomer] = useState<Customer>({ name: "", phone: "", birthDate: "" });
+  const [saleDate, setSaleDate] = useState<string>(todayISO());
   const [payments, setPayments] = useState<Record<PaymentMethod, number>>({
     dinheiro: 0,
     credito: 0,
@@ -176,6 +185,7 @@ export default function SaleForm() {
     setEntryQuantity(1);
     setEntryPrice(0);
     setPayments({ credito: 0, debito: 0, dinheiro: 0, pix: 0 });
+    setSaleDate(todayISO());
     setSubmissionState("idle");
   };
 
@@ -322,6 +332,11 @@ export default function SaleForm() {
       return;
     }
 
+    if (!saleDate) {
+      toast.error("Informe a data da venda.");
+      return;
+    }
+
     if (!itemsPayload.length) {
       toast.error("Adicione pelo menos um item na venda.");
       return;
@@ -345,6 +360,7 @@ export default function SaleForm() {
         customer,
         items: itemsPayload,
         payments,
+        saleDate,
       });
       toast.success("Venda cadastrada com sucesso!");
       resetForm();
@@ -647,13 +663,32 @@ export default function SaleForm() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
-                <div className="text-xs text-text-secondary dark:text-[#bcaec4]">Total</div>
-                <div className="text-lg font-black">
-                  {(entryQuantity * entryPrice || 0).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
+                    Data da venda
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
+                      <Lucide.Calendar className="h-4 w-4" />
+                    </span>
+                    <Input
+                      type="date"
+                      className="pl-10"
+                      value={saleDate}
+                      onChange={(e) => setSaleDate(e.target.value)}
+                      disabled={disableAll}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
+                  <div className="text-xs text-text-secondary dark:text-[#bcaec4]">Total</div>
+                  <div className="text-lg font-black">
+                    {(entryQuantity * entryPrice || 0).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </div>
                 </div>
               </div>
               <button
