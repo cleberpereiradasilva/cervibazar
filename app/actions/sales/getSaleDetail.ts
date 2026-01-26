@@ -91,7 +91,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
     id: sale.id,
     createdAt: sale.createdAt,
     saleDate: sale.saleDate,
-    sellerId: sale.sellerId,
+    sellerId: sale.sellerId ?? "",
     totalAmount: sale.totalAmount,
     creditAmount: sale.creditAmount,
     debitAmount: sale.debitAmount,
