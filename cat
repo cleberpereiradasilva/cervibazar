@@ -1,0 +1,50 @@
+error: column "seller_id" of relation "sales" contains null values
+    at /work/work/caixa-app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:80622:26)
+    at async pgPush (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:84432:13)
+    at async Object.handler (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:93871:9)
+    at async run (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:93117:7) {
+  length: 148,
+  severity: 'ERROR',
+  code: '23502',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'sales',
+  column: 'seller_id',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'tablecmds.c',
+  line: '6279',
+  routine: 'ATRewriteTable'
+}
+error: column "seller_id" of relation "sales" contains null values
+    at /work/work/caixa-app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:80622:26)
+    at async pgPush (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:84432:13)
+    at async Object.handler (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:93871:9)
+    at async run (/work/work/caixa-app/node_modules/drizzle-kit/bin.cjs:93117:7) {
+  length: 148,
+  severity: 'ERROR',
+  code: '23502',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'sales',
+  column: 'seller_id',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'tablecmds.c',
+  line: '6279',
+  routine: 'ATRewriteTable'
+}

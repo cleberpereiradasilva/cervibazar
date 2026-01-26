@@ -90,9 +90,8 @@ export default function SaleDetailClient({ saleId }: Props) {
     );
   }
 
-  const createdAt = new Date(sale.createdAt);
-  const dateLabel = createdAt.toLocaleDateString("pt-BR");
-  const timeLabel = createdAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const saleDate = new Date(sale.saleDate);
+  const dateLabel = saleDate.toLocaleDateString("pt-BR");
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -104,13 +103,22 @@ export default function SaleDetailClient({ saleId }: Props) {
             Detalhes da Venda
           </h2>
           <p className="text-text-secondary dark:text-[#bcaec4]">
-            {dateLabel} às {timeLabel} • Vendedor: {sale.sellerName ?? "N/D"}
+            {dateLabel} • Vendedor: {sale.sellerName ?? "N/D"}
           </p>
         </div>
-        <Button variant="ghost" className="gap-2" onClick={() => router.back()}>
-          <Lucide.ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/vendas?edit=${encodeURIComponent(sale.id)}`}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-[var(--radius)] text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary border border-input bg-white text-text-main hover:bg-background-light h-10 px-4 gap-2"
+          >
+            <Lucide.Pencil className="h-4 w-4" />
+            Editar
+          </a>
+          <Button variant="ghost" className="gap-2" onClick={() => router.back()}>
+            <Lucide.ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">

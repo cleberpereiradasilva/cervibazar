@@ -1,17 +1,18 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { sales } from "@/app/lib/db/schema/sales";
 import { saleItems } from "@/app/lib/db/schema/saleItems";
 import { clients } from "@/app/lib/db/schema/clients";
-import { users } from "@/app/lib/db/schema/users";
 import { categories } from "@/app/lib/db/schema/categories";
 
 export type SaleDetail = {
   id: string;
   createdAt: Date;
+  saleDate: Date;
+  sellerId: string;
   totalAmount: string;
   creditAmount: string;
   debitAmount: string;
@@ -47,6 +48,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
     .select({
       id: sales.id,
       createdAt: sales.createdAt,
+      saleDate: sales.saleDate,
       totalAmount: sales.totalAmount,
       creditAmount: sales.creditAmount,
       debitAmount: sales.debitAmount,
@@ -55,14 +57,17 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
       changeAmount: sales.changeAmount,
       pendingAmount: sales.pendingAmount,
       clientId: sales.clientId,
-      sellerName: users.name,
+      sellerId: sales.sellerId,
+      sellerName: sql<string>`coalesce(
+        (select u.name from users u where u.id = ${sales.sellerId}),
+        (select u.name from users u where u.id = ${sales.createdBy})
+      )`.as("seller_name"),
       clientName: clients.name,
       clientPhone: clients.phone,
       clientBirthday: clients.birthday,
     })
     .from(sales)
     .leftJoin(clients, eq(clients.id, sales.clientId))
-    .leftJoin(users, eq(users.id, sales.createdBy))
     .where(eq(sales.id, id));
 
   if (!sale) {
@@ -85,6 +90,8 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
   return {
     id: sale.id,
     createdAt: sale.createdAt,
+    saleDate: sale.saleDate,
+    sellerId: sale.sellerId,
     totalAmount: sale.totalAmount,
     creditAmount: sale.creditAmount,
     debitAmount: sale.debitAmount,

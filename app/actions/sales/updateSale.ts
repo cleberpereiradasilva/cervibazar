@@ -1,10 +1,11 @@
 "use server";
 
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
+import { saleUpdateSchema } from "@/app/lib/validators/saleUpdateSchema";
 import { saleStore } from "@/app/lib/sales/saleStore";
-import { saleInputSchema } from "@/app/lib/validators/saleInputSchema";
 
-export type CreateSaleInput = {
+export type UpdateSaleInput = {
+  id: string;
   saleDate: string;
   sellerId: string;
   customer: { name: string; phone: string; birthDate?: string };
@@ -12,11 +13,11 @@ export type CreateSaleInput = {
   payments: { credito: number; debito: number; dinheiro: number; pix: number };
 };
 
-export async function createSale(token: string, input: CreateSaleInput) {
+export async function updateSale(token: string, input: UpdateSaleInput) {
   const payload = await verifyAuthToken(token);
-  const data = saleInputSchema().parse(input);
-  const store = saleStore();
-  return store.create({
+  const data = saleUpdateSchema().parse(input);
+  return saleStore().update({
+    saleId: data.id,
     saleDate: data.saleDate,
     sellerId: data.sellerId,
     customer: data.customer,

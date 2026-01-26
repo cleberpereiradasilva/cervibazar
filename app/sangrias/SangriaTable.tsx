@@ -22,8 +22,18 @@ type SangriaTableProps = {
   onEdit: (entry: SangriaEntry) => void;
 };
 
-function formatDate(date: Date) {
-  return new Date(date).toLocaleDateString("pt-BR");
+function formatDate(date: Date | string) {
+  if (typeof date === "string") {
+    const [y, m, d] = date.split("-").map(Number);
+    if (y && m && d) {
+      return new Date(y, m - 1, d).toLocaleDateString("pt-BR");
+    }
+  }
+  const parsed = date instanceof Date ? date : new Date(date);
+  const y = parsed.getUTCFullYear();
+  const m = parsed.getUTCMonth();
+  const d = parsed.getUTCDate();
+  return new Date(y, m, d).toLocaleDateString("pt-BR");
 }
 
 function formatCurrency(value: string | number) {
@@ -92,7 +102,7 @@ export default function SangriaTable({
                 <TableRow key={entry.id}>
                   <TableCell>
                     <p className="font-bold text-text-main dark:text-white">
-                      {formatDate(entry.createdAt)}
+                      {formatDate(entry.day)}
                     </p>
                   </TableCell>
                   <TableCell>

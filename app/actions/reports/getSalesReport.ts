@@ -64,7 +64,7 @@ function percentChange(current: number, previous: number): number {
 }
 
 async function getTotals(db: ReturnType<typeof getDb>, start: string, end: string) {
-  const dateCondition = sql`${sales.day} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`;
+  const dateCondition = sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`;
   const [salesAgg] = await db
     .select({
       totalSales: sql<string>`coalesce(sum(${sales.totalAmount}), 0)`,
@@ -79,7 +79,7 @@ async function getTotals(db: ReturnType<typeof getDb>, start: string, end: strin
     })
     .from(saleItems)
     .where(
-      sql`${saleItems.day} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
+      sql`${saleItems.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
     );
 
   const totalSales = Number(salesAgg?.totalSales ?? 0);
@@ -100,7 +100,7 @@ async function getTimeline(
   grouping: "day" | "month",
 ) {
   const isMonthly = grouping === "month";
-  const bucket = isMonthly ? sql`date_trunc('month', ${sales.day})` : sales.day;
+  const bucket = isMonthly ? sql`date_trunc('month', ${sales.saleDate})` : sales.saleDate;
 
   const rows = await db
     .select({
@@ -108,7 +108,7 @@ async function getTimeline(
       totalAmount: sql<string>`sum(${sales.totalAmount})`.as("total_amount"),
     })
     .from(sales)
-    .where(sql`${sales.day} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`)
+    .where(sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`)
     .groupBy(bucket)
     .orderBy(asc(bucket));
 
@@ -125,7 +125,7 @@ async function getPaymentTimeline(
   grouping: "day" | "month",
 ) {
   const isMonthly = grouping === "month";
-  const bucket = isMonthly ? sql`date_trunc('month', ${sales.day})` : sales.day;
+  const bucket = isMonthly ? sql`date_trunc('month', ${sales.saleDate})` : sales.saleDate;
 
   const rows = await db
     .select({
@@ -136,7 +136,7 @@ async function getPaymentTimeline(
       pix: sql<string>`coalesce(sum(${sales.pixAmount}), 0)`.as("pix"),
     })
     .from(sales)
-    .where(sql`${sales.day} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`)
+    .where(sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`)
     .groupBy(bucket)
     .orderBy(asc(bucket));
 
@@ -162,7 +162,7 @@ async function getCategoryBreakdown(db: ReturnType<typeof getDb>, start: string,
       saleItems,
       and(
         eq(categories.id, saleItems.categoryId),
-        sql`${saleItems.day} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
+        sql`${saleItems.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
       ),
     )
     .where(isNull(categories.deletedAt))

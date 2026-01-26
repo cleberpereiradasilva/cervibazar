@@ -15,7 +15,7 @@ export default function AberturaClientPage() {
   const [editing, setEditing] = useState<CashOpening | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
-  const handleSubmit = async (input: { amount: string }) => {
+  const handleSubmit = async (input: { amount: string; entryDate: string }) => {
     if (editing) {
       const result = await update(editing.id, input);
       if (result.ok) {

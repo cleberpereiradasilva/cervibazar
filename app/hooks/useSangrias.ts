@@ -11,6 +11,7 @@ export type SangriaEntry = {
   id: string;
   reasonId: string;
   amount: string;
+  day: Date | string;
   createdAt: Date;
   createdBy: string;
   reasonName: string | null;
@@ -18,7 +19,12 @@ export type SangriaEntry = {
   observation?: string | null;
 };
 
-type CreateInput = { reasonId: string; amount: string | number; observation?: string };
+type CreateInput = {
+  reasonId: string;
+  amount: string | number;
+  entryDate: string;
+  observation?: string;
+};
 
 export function useSangrias() {
   const [entries, setEntries] = useState<SangriaEntry[]>([]);

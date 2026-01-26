@@ -10,7 +10,11 @@ import { toast } from "sonner";
 import { searchClients } from "@/app/actions/clients/searchClients";
 import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { createSale } from "@/app/actions/sales/createSale";
+import { updateSale } from "@/app/actions/sales/updateSale";
+import { getSaleDetail } from "@/app/actions/sales/getSaleDetail";
 import { login } from "@/app/actions/auth/login";
+import { useSearchParams } from "next/navigation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type CartItem = {
   id: string;
@@ -41,7 +45,27 @@ function getIcon(icon: string) {
   return IconComp;
 }
 
-export default function SaleForm() {
+function todayISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+type SaleFormProps = {
+  saleId?: string;
+  sellerId?: string;
+  onSellerChange?: (id: string) => void;
+};
+
+export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormProps) {
+  const searchParams = useSearchParams();
+  const resolvedSaleId = useMemo(() => {
+    if (saleId && saleId.trim()) return saleId.trim();
+    const editParam = searchParams?.get("edit")?.trim();
+    return editParam || "";
+  }, [saleId, searchParams]);
   const { categories } = useCategories();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -49,6 +73,7 @@ export default function SaleForm() {
   const [entryPrice, setEntryPrice] = useState<number>(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [customer, setCustomer] = useState<Customer>({ name: "", phone: "", birthDate: "" });
+  const [saleDate, setSaleDate] = useState<string>(todayISO());
   const [payments, setPayments] = useState<Record<PaymentMethod, number>>({
     dinheiro: 0,
     credito: 0,
@@ -56,6 +81,7 @@ export default function SaleForm() {
     pix: 0,
   });
   const [submissionState, setSubmissionState] = useState<"idle" | "submitting" | "failed">("idle");
+  const [editLoading, setEditLoading] = useState(false);
   const [birthParts, setBirthParts] = useState<{ year: number; month: number; day: number }>({
     year: 0,
     month: 0,
@@ -69,6 +95,10 @@ export default function SaleForm() {
   const [authPassword, setAuthPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [initialItemsSignature, setInitialItemsSignature] = useState<string | null>(null);
+  const [needsPaymentReview, setNeedsPaymentReview] = useState(false);
+  const [paymentReviewConfirmed, setPaymentReviewConfirmed] = useState(false);
+  const [showPaymentReview, setShowPaymentReview] = useState(false);
 
   useEffect(() => {
     if (categories.length && !selectedCategoryId) {
@@ -89,6 +119,32 @@ export default function SaleForm() {
       }, 0),
     [cartItems]
   );
+
+  const itemsSignature = useMemo(() => {
+    const normalized = cartItems
+      .map((item) => ({
+        categoryId: item.categoryId,
+        quantity: Number(item.quantity) || 0,
+        price: Number(item.price) || 0,
+      }))
+      .sort((a, b) => a.categoryId.localeCompare(b.categoryId));
+    return JSON.stringify(normalized);
+  }, [cartItems]);
+
+  const isEditing = Boolean(resolvedSaleId);
+  const disableAll = submissionState === "submitting" || editLoading;
+
+  useEffect(() => {
+    if (!isEditing || !initialItemsSignature) {
+      setNeedsPaymentReview(false);
+      return;
+    }
+    const changed = itemsSignature !== initialItemsSignature;
+    setNeedsPaymentReview(changed);
+    if (changed) {
+      setPaymentReviewConfirmed(false);
+    }
+  }, [isEditing, itemsSignature, initialItemsSignature]);
 
   const handleAddToCart = () => {
     if (!selectedCategoryId) {
@@ -176,7 +232,11 @@ export default function SaleForm() {
     setEntryQuantity(1);
     setEntryPrice(0);
     setPayments({ credito: 0, debito: 0, dinheiro: 0, pix: 0 });
+    setSaleDate(todayISO());
     setSubmissionState("idle");
+    setInitialItemsSignature(null);
+    setNeedsPaymentReview(false);
+    setPaymentReviewConfirmed(false);
   };
 
   const totalPaid = useMemo(() => {
@@ -280,6 +340,18 @@ export default function SaleForm() {
     return "";
   };
 
+  const toDateInputValue = (raw: Date | string | null | undefined) => {
+    if (!raw) return "";
+    if (typeof raw === "string") return raw.slice(0, 10);
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+      const y = raw.getUTCFullYear();
+      const m = String(raw.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(raw.getUTCDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+    return "";
+  };
+
   const splitBirthday = (value: string) => {
     if (!value) return { year: 0, month: 0, day: 0 };
     const [y, m, d] = value.split("-").map((v) => Number(v));
@@ -290,10 +362,68 @@ export default function SaleForm() {
     };
   };
 
-  const disableAll = submissionState === "submitting";
+  useEffect(() => {
+    if (!resolvedSaleId) return;
+    const loadSale = async () => {
+      const token = getClientToken();
+      if (!token) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        setAuthNeeded(true);
+        return;
+      }
+      try {
+        setEditLoading(true);
+        const detail = await getSaleDetail(token, resolvedSaleId);
+        const birthDate = toDateInputValue(detail.client.birthday ?? null);
+        setCustomer({
+          name: detail.client.name ?? "",
+          phone: detail.client.phone ?? "",
+          birthDate,
+        });
+        setBirthParts(splitBirthday(birthDate));
+        setSaleDate(toDateInputValue(detail.saleDate) || todayISO());
+        setPayments({
+          credito: Number(detail.creditAmount) || 0,
+          debito: Number(detail.debitAmount) || 0,
+          dinheiro: Number(detail.cashAmount) || 0,
+          pix: Number(detail.pixAmount) || 0,
+        });
+        setCartItems(
+          detail.items.map((item) => ({
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+            categoryId: item.categoryId,
+            name: item.categoryName ?? "Categoria",
+            icon: item.categoryIcon ?? "Tag",
+            quantity: Number(item.quantity) || 0,
+            price: Number(item.unitPrice) || 0,
+          }))
+        );
+        if (detail.sellerId && onSellerChange) {
+          onSellerChange(detail.sellerId);
+        }
+        const normalized = detail.items
+          .map((item) => ({
+            categoryId: item.categoryId,
+            quantity: Number(item.quantity) || 0,
+            price: Number(item.unitPrice) || 0,
+          }))
+          .sort((a, b) => a.categoryId.localeCompare(b.categoryId));
+        setInitialItemsSignature(JSON.stringify(normalized));
+        setPaymentReviewConfirmed(false);
+        setNeedsPaymentReview(false);
+      } catch (error: any) {
+        toast.error(error?.message || "Erro ao carregar venda.");
+      } finally {
+        setEditLoading(false);
+      }
+    };
+
+    void loadSale();
+  }, [resolvedSaleId]);
+
   const lockNonItems = submissionState === "failed";
 
-  const submitSale = async () => {
+  const executeSubmit = async () => {
     const token = getClientToken();
     if (!token) {
       toast.error("Sessão expirada. Faça login novamente.");
@@ -322,8 +452,18 @@ export default function SaleForm() {
       return;
     }
 
+    if (!saleDate) {
+      toast.error("Informe a data da venda.");
+      return;
+    }
+
     if (!itemsPayload.length) {
       toast.error("Adicione pelo menos um item na venda.");
+      return;
+    }
+
+    if (!sellerId) {
+      toast.error("Selecione o vendedor.");
       return;
     }
 
@@ -341,21 +481,58 @@ export default function SaleForm() {
     setShowSuggestions(false);
 
     try {
-      await createSale(token, {
-        customer,
-        items: itemsPayload,
-        payments,
-      });
-      toast.success("Venda cadastrada com sucesso!");
+      if (resolvedSaleId) {
+        await updateSale(token, {
+          id: resolvedSaleId,
+          customer,
+          items: itemsPayload,
+          payments,
+          saleDate,
+          sellerId,
+        });
+        toast.success("Venda atualizada com sucesso!");
+      } else {
+        await createSale(token, {
+          customer,
+          items: itemsPayload,
+          payments,
+          saleDate,
+          sellerId,
+        });
+        toast.success("Venda cadastrada com sucesso!");
+      }
       resetForm();
     } catch {
-      toast.error("Erro ao efetuar a venda!");
+      toast.error(resolvedSaleId ? "Erro ao salvar a venda!" : "Erro ao efetuar a venda!");
       setSubmissionState("failed");
+    }
+  };
+
+  const submitSale = async () => {
+    if (isEditing && needsPaymentReview && !paymentReviewConfirmed) {
+      setShowPaymentReview(true);
+      return;
+    }
+    await executeSubmit();
+  };
+
+  const markPaymentReviewed = () => {
+    if (isEditing && needsPaymentReview) {
+      setPaymentReviewConfirmed(true);
     }
   };
 
   return (
     <>
+      <ConfirmDialog
+        open={showPaymentReview}
+        title="Revisar formas de pagamento"
+        description="Os itens da venda foram alterados. Revise as formas de pagamento antes de salvar."
+        confirmLabel="Ok, revisar"
+        showCancel={false}
+        onCancel={() => setShowPaymentReview(false)}
+        onConfirm={() => setShowPaymentReview(false)}
+      />
       {authNeeded && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-md rounded-2xl bg-surface-light p-6 shadow-2xl dark:bg-surface-dark">
@@ -647,13 +824,32 @@ export default function SaleForm() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
-                <div className="text-xs text-text-secondary dark:text-[#bcaec4]">Total</div>
-                <div className="text-lg font-black">
-                  {(entryQuantity * entryPrice || 0).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
+                    Data da venda
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
+                      <Lucide.Calendar className="h-4 w-4" />
+                    </span>
+                    <Input
+                      type="date"
+                      className="pl-10"
+                      value={saleDate}
+                      onChange={(e) => setSaleDate(e.target.value)}
+                      disabled={disableAll}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
+                  <div className="text-xs text-text-secondary dark:text-[#bcaec4]">Total</div>
+                  <div className="text-lg font-black">
+                    {(entryQuantity * entryPrice || 0).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </div>
                 </div>
               </div>
               <button
@@ -779,7 +975,7 @@ export default function SaleForm() {
                       R$
                     </span>
                     <input
-                    className="w-full h-14 pl-12 pr-4 bg-background-light dark:bg-background-dark border-transparent focus:border-primary focus:ring-0 rounded-[16px] text-text-main dark:text-white font-bold text-xl placeholder:text-text-secondary/60"
+                      className="w-full h-14 pl-12 pr-4 bg-background-light dark:bg-background-dark border-transparent focus:border-primary focus:ring-0 rounded-[16px] text-text-main dark:text-white font-bold text-xl placeholder:text-text-secondary/60"
                       value={payments[method] || ""}
                       onChange={(e) =>
                         setPayments((prev) => ({
@@ -787,6 +983,7 @@ export default function SaleForm() {
                           [method]: Math.max(0, Number(e.target.value)),
                         }))
                       }
+                      onFocus={markPaymentReviewed}
                       inputMode="decimal"
                       placeholder="000,00"
                       disabled={disableAll || lockNonItems}
@@ -795,7 +992,10 @@ export default function SaleForm() {
                   <button
                     type="button"
                     className="px-4 h-14 rounded-[16px] bg-secondary/20 text-text-main font-bold hover:bg-secondary/30 active:scale-95 transition-all text-sm flex items-center gap-1"
-                    onClick={() => fillRemaining(method)}
+                    onClick={() => {
+                      markPaymentReviewed();
+                      fillRemaining(method);
+                    }}
                     disabled={disableAll || lockNonItems}
                   >
                     <Lucide.Plus className="h-4 w-4" />
@@ -841,14 +1041,18 @@ export default function SaleForm() {
           <div className="pt-8 relative z-10">
             <button
               type="button"
-              className="w-full h-14 bg-primary hover:bg-primary-hover active:scale-[0.98] transition-all text-white rounded-[16px] font-black text-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className={`w-full h-14 active:scale-[0.98] transition-all rounded-[16px] font-black text-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${
+                isEditing
+                  ? "bg-yellow-400 hover:bg-yellow-500 text-[#2d1b33] shadow-yellow-400/30"
+                  : "bg-primary hover:bg-primary-hover text-white shadow-primary/30"
+              }`}
               onClick={submitSale}
               disabled={disableAll}
             >
               {submissionState === "submitting" ? (
                 <>
                   <Lucide.Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Finalizando...</span>
+                  <span>{isEditing ? "Salvando..." : "Finalizando..."}</span>
                 </>
               ) : submissionState === "failed" ? (
                 <>
@@ -857,7 +1061,7 @@ export default function SaleForm() {
                 </>
               ) : (
                 <>
-                  <span>Finalizar Venda</span>
+                  <span>{isEditing ? "Salvar Venda" : "Finalizar Venda"}</span>
                   <Lucide.ArrowRight className="h-5 w-5" />
                 </>
               )}

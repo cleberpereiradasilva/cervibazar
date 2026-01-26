@@ -20,6 +20,7 @@ export default function SangriasClientPage() {
   const handleSubmit = async (input: {
     reasonId: string;
     amount: string;
+    entryDate: string;
     observation?: string;
   }) => {
     if (editing) {
