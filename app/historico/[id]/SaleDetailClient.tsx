@@ -106,10 +106,19 @@ export default function SaleDetailClient({ saleId }: Props) {
             {dateLabel} • Vendedor: {sale.sellerName ?? "N/D"}
           </p>
         </div>
-        <Button variant="ghost" className="gap-2" onClick={() => router.back()}>
-          <Lucide.ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/vendas?edit=${encodeURIComponent(sale.id)}`}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-[var(--radius)] text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary border border-input bg-white text-text-main hover:bg-background-light h-10 px-4 gap-2"
+          >
+            <Lucide.Pencil className="h-4 w-4" />
+            Editar
+          </a>
+          <Button variant="ghost" className="gap-2" onClick={() => router.back()}>
+            <Lucide.ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">

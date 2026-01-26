@@ -9,6 +9,7 @@ type ConfirmDialogProps = {
   cancelLabel?: string;
   confirmTone?: "danger" | "default";
   loading?: boolean;
+  showCancel?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -21,6 +22,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancelar",
   confirmTone = "default",
   loading = false,
+  showCancel = true,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -53,16 +55,18 @@ export function ConfirmDialog({
         </div>
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2 border border-[#e6e1e8] dark:border-[#452b4d]"
-            onClick={onCancel}
-            disabled={loading}
-            tabIndex={0}
-          >
-            {cancelLabel}
-          </Button>
+          {showCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 border border-[#e6e1e8] dark:border-[#452b4d]"
+              onClick={onCancel}
+              disabled={loading}
+              tabIndex={0}
+            >
+              {cancelLabel}
+            </Button>
+          )}
           <Button
             type="button"
             className={`gap-2 ${confirmTone === "danger" ? "bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600" : ""}`}
