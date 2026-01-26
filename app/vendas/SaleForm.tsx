@@ -13,7 +13,6 @@ import { createSale } from "@/app/actions/sales/createSale";
 import { updateSale } from "@/app/actions/sales/updateSale";
 import { getSaleDetail } from "@/app/actions/sales/getSaleDetail";
 import { login } from "@/app/actions/auth/login";
-import { useSearchParams } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type CartItem = {
@@ -60,12 +59,7 @@ type SaleFormProps = {
 };
 
 export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormProps) {
-  const searchParams = useSearchParams();
-  const resolvedSaleId = useMemo(() => {
-    if (saleId && saleId.trim()) return saleId.trim();
-    const editParam = searchParams?.get("edit")?.trim();
-    return editParam || "";
-  }, [saleId, searchParams]);
+  const resolvedSaleId = useMemo(() => (saleId ? saleId.trim() : ""), [saleId]);
   const { categories } = useCategories();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
