@@ -1,0 +1,76 @@
+DrizzleQueryError: Failed query: CREATE TYPE IF NOT EXISTS "public"."user_role" AS ENUM('admin', 'caixa');
+params: 
+    at NodePgPreparedQuery.queryWithCache (/work/work/caixa-app/node_modules/src/pg-core/session.ts:73:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/work/work/caixa-app/node_modules/src/pg-core/dialect.ts:102:7)
+    ... 2 lines matching cause stack trace ...
+    at async migrate (/work/work/caixa-app/node_modules/src/node-postgres/migrator.ts:10:2) {
+  query: `CREATE TYPE IF NOT EXISTS "public"."user_role" AS ENUM('admin', 'caixa');`,
+  params: [],
+  cause: error: syntax error at or near "NOT"
+      at /work/work/caixa-app/node_modules/pg/lib/client.js:545:17
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async <anonymous> (/work/work/caixa-app/node_modules/src/node-postgres/session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (/work/work/caixa-app/node_modules/src/pg-core/session.ts:71:12)
+      at async <anonymous> (/work/work/caixa-app/node_modules/src/pg-core/dialect.ts:102:7)
+      at async NodePgSession.transaction (/work/work/caixa-app/node_modules/src/node-postgres/session.ts:259:19)
+      at async PgDialect.migrate (/work/work/caixa-app/node_modules/src/pg-core/dialect.ts:95:3)
+      at async migrate (/work/work/caixa-app/node_modules/src/node-postgres/migrator.ts:10:2) {
+    length: 92,
+    severity: 'ERROR',
+    code: '42601',
+    detail: undefined,
+    hint: undefined,
+    position: '16',
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'scan.l',
+    line: '1244',
+    routine: 'scanner_yyerror'
+  }
+}
+DrizzleQueryError: Failed query: CREATE TYPE IF NOT EXISTS "public"."user_role" AS ENUM('admin', 'caixa');
+params: 
+    at NodePgPreparedQuery.queryWithCache (/work/work/caixa-app/node_modules/src/pg-core/session.ts:73:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/work/work/caixa-app/node_modules/src/pg-core/dialect.ts:102:7)
+    ... 2 lines matching cause stack trace ...
+    at async migrate (/work/work/caixa-app/node_modules/src/node-postgres/migrator.ts:10:2) {
+  query: `CREATE TYPE IF NOT EXISTS "public"."user_role" AS ENUM('admin', 'caixa');`,
+  params: [],
+  cause: error: syntax error at or near "NOT"
+      at /work/work/caixa-app/node_modules/pg/lib/client.js:545:17
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async <anonymous> (/work/work/caixa-app/node_modules/src/node-postgres/session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (/work/work/caixa-app/node_modules/src/pg-core/session.ts:71:12)
+      at async <anonymous> (/work/work/caixa-app/node_modules/src/pg-core/dialect.ts:102:7)
+      at async NodePgSession.transaction (/work/work/caixa-app/node_modules/src/node-postgres/session.ts:259:19)
+      at async PgDialect.migrate (/work/work/caixa-app/node_modules/src/pg-core/dialect.ts:95:3)
+      at async migrate (/work/work/caixa-app/node_modules/src/node-postgres/migrator.ts:10:2) {
+    length: 92,
+    severity: 'ERROR',
+    code: '42601',
+    detail: undefined,
+    hint: undefined,
+    position: '16',
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'scan.l',
+    line: '1244',
+    routine: 'scanner_yyerror'
+  }
+}
+[2K[2K[1G[31merror[39m Command failed with exit code 1.
+[1G[31merror[39m Command failed with exit code 1.

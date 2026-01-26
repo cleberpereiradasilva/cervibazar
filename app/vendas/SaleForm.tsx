@@ -55,9 +55,11 @@ function todayISO() {
 
 type SaleFormProps = {
   saleId?: string;
+  sellerId?: string;
+  onSellerChange?: (id: string) => void;
 };
 
-export default function SaleForm({ saleId }: SaleFormProps) {
+export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormProps) {
   const searchParams = useSearchParams();
   const resolvedSaleId = useMemo(() => {
     if (saleId && saleId.trim()) return saleId.trim();
@@ -396,6 +398,9 @@ export default function SaleForm({ saleId }: SaleFormProps) {
             price: Number(item.unitPrice) || 0,
           }))
         );
+        if (detail.sellerId && onSellerChange) {
+          onSellerChange(detail.sellerId);
+        }
         const normalized = detail.items
           .map((item) => ({
             categoryId: item.categoryId,
@@ -457,6 +462,11 @@ export default function SaleForm({ saleId }: SaleFormProps) {
       return;
     }
 
+    if (!sellerId) {
+      toast.error("Selecione o vendedor.");
+      return;
+    }
+
     if (totalPaid <= 0) {
       toast.error("Informe pelo menos uma forma de pagamento.");
       return;
@@ -478,6 +488,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
           items: itemsPayload,
           payments,
           saleDate,
+          sellerId,
         });
         toast.success("Venda atualizada com sucesso!");
       } else {
@@ -486,6 +497,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
           items: itemsPayload,
           payments,
           saleDate,
+          sellerId,
         });
         toast.success("Venda cadastrada com sucesso!");
       }

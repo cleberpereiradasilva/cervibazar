@@ -16,6 +16,7 @@ type SaleInput = {
   items: SaleItemInput[];
   payments: { credito: number; debito: number; dinheiro: number; pix: number };
   saleDate: string;
+  sellerId: string;
   userId: string;
 };
 
@@ -112,6 +113,7 @@ export function saleStore() {
         id: saleId,
         clientId,
         createdBy: input.userId,
+        sellerId: input.sellerId,
         totalAmount: totalAmount.toFixed(2),
         creditAmount: payments.credito.toFixed(2),
         debitAmount: payments.debito.toFixed(2),
@@ -221,6 +223,7 @@ export function saleStore() {
         .update(sales)
         .set({
           clientId,
+          sellerId: input.sellerId,
           totalAmount: totalAmount.toFixed(2),
           creditAmount: payments.credito.toFixed(2),
           debitAmount: payments.debito.toFixed(2),

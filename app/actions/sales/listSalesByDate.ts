@@ -5,7 +5,6 @@ import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { sales } from "@/app/lib/db/schema/sales";
 import { saleItems } from "@/app/lib/db/schema/saleItems";
-import { users } from "@/app/lib/db/schema/users";
 import { clients } from "@/app/lib/db/schema/clients";
 
 export type SaleSummary = {
@@ -51,18 +50,19 @@ export async function listSalesByDate(
       totalItems: sql<number>`coalesce(sum(${saleItems.quantity}), 0)`.as(
         "total_items",
       ),
-      sellerName: users.name,
+      sellerName: sql<string>`coalesce(
+        (select u.name from users u where u.id = ${sales.sellerId}),
+        (select u.name from users u where u.id = ${sales.createdBy})
+      )`.as("seller_name"),
       clientName: clients.name,
       clientPhone: clients.phone,
     })
     .from(sales)
     .leftJoin(clients, eq(clients.id, sales.clientId))
     .leftJoin(saleItems, eq(sales.id, saleItems.saleId))
-    .leftJoin(users, eq(users.id, sales.createdBy))
     .where(whereClause)
     .groupBy(
       sales.id,
-      users.name,
       clients.name,
       clients.phone,
       sales.createdAt,

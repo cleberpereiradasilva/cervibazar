@@ -19,6 +19,7 @@ export function saleInputSchema() {
           date.getUTCDate() === d
         );
       }, "Data da venda inválida."),
+    sellerId: z.string().min(1, "Selecione o vendedor."),
     customer: z.object({
       name: z.string().trim().min(1).max(120),
       phone: z.string().trim().min(1).max(40),
