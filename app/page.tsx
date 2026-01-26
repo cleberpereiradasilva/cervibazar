@@ -1,5 +1,15 @@
-import { redirect } from "next/navigation";
+import SidebarLayout from "./sidebar";
 
 export default function Home() {
-  return redirect("/vendas");
+  return (
+    <SidebarLayout>
+      <div className="flex min-h-[calc(100vh-80px)] items-center justify-center px-4">
+        <img
+          src="/logo-cervi.png"
+          alt="Cervi Bazar"
+          className="h-56 w-auto sm:h-72"
+        />
+      </div>
+    </SidebarLayout>
+  );
 }
