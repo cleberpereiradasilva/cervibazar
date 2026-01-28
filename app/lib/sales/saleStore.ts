@@ -2,6 +2,7 @@ import { eq, isNull } from "drizzle-orm";
 import { clients } from "../db/schema/clients";
 import { saleItems } from "../db/schema/saleItems";
 import { sales } from "../db/schema/sales";
+import { users } from "../db/schema/users";
 import { getDb } from "../db/client";
 import { generateShortId } from "../id/generateShortId";
 
@@ -162,11 +163,11 @@ export function saleStore() {
 
     return db.transaction(async (tx) => {
       const [existingSale] = await tx
-        .select({ id: sales.id, clientId: sales.clientId })
+        .select({ id: sales.id, clientId: sales.clientId, deletedAt: sales.deletedAt })
         .from(sales)
         .where(eq(sales.id, input.saleId));
 
-      if (!existingSale) {
+      if (!existingSale || existingSale.deletedAt) {
         throw new Error("Venda não encontrada.");
       }
 
@@ -253,19 +254,43 @@ export function saleStore() {
     });
   };
 
-  const remove = async (saleId: string) => {
+  const remove = async (input: {
+    saleId: string;
+    deletedBy: string;
+    deletedSellerId: string | null;
+  }) => {
     return db.transaction(async (tx) => {
       const [existing] = await tx
-        .select({ id: sales.id })
+        .select({ id: sales.id, deletedAt: sales.deletedAt })
         .from(sales)
-        .where(eq(sales.id, saleId));
+        .where(eq(sales.id, input.saleId));
 
-      if (!existing) {
+      if (!existing || existing.deletedAt) {
         throw new Error("Venda não encontrada.");
       }
 
-      await tx.delete(saleItems).where(eq(saleItems.saleId, saleId));
-      await tx.delete(sales).where(eq(sales.id, saleId));
+      const now = new Date();
+      const [deletedByUser] = await tx
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, input.deletedBy));
+      const [deletedSellerUser] = input.deletedSellerId
+        ? await tx
+            .select({ name: users.name })
+            .from(users)
+            .where(eq(users.id, input.deletedSellerId))
+        : [];
+      await tx
+        .update(sales)
+        .set({
+          deletedAt: now,
+          deletedBy: input.deletedBy,
+          deletedSellerId: input.deletedSellerId,
+          deletedByName: deletedByUser?.name ?? null,
+          deletedSellerName: deletedSellerUser?.name ?? null,
+          updatedAt: now,
+        })
+        .where(eq(sales.id, input.saleId));
       return true;
     });
   };

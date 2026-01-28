@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { sales } from "@/app/lib/db/schema/sales";
@@ -47,7 +47,7 @@ export async function listSalesByRange(
   const phoneQuery = phoneQueryRaw ? phoneQueryRaw.replace(/\D/g, "") : "";
   const sellerId = filters?.sellerId?.trim();
   const dateCondition = sql`${sales.saleDate} between to_date(${startDate}, 'YYYY-MM-DD') and to_date(${endDate}, 'YYYY-MM-DD')`;
-  const conditions = [dateCondition];
+  const conditions = [dateCondition, isNull(sales.deletedAt)];
   if (nameQuery) {
     conditions.push(sql`${clients.name} ilike ${`%${nameQuery}%`}`);
   }

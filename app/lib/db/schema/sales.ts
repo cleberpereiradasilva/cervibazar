@@ -19,4 +19,9 @@ export const sales = pgTable("sales", {
   day: date("day", { mode: "date" }).default(sql`now()::date`).notNull(),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
+  deletedBy: text("deleted_by"),
+  deletedSellerId: text("deleted_seller_id"),
+  deletedByName: text("deleted_by_name"),
+  deletedSellerName: text("deleted_seller_name"),
 });

@@ -26,8 +26,22 @@ export default function VendasClientPage({ saleId }: VendasClientPageProps) {
   const [users, setUsers] = useState<UserOption[]>([]);
   const [sellerId, setSellerId] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [resolvedSaleId, setResolvedSaleId] = useState(saleId ?? "");
 
-  const title = saleId ? `Editar Venda - ${saleId}` : "Vendas";
+  useEffect(() => {
+    if (saleId) {
+      setResolvedSaleId(saleId);
+      return;
+    }
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const edit = params.get("edit")?.trim();
+    if (edit) {
+      setResolvedSaleId(edit);
+    }
+  }, [saleId]);
+
+  const title = resolvedSaleId ? `Editar Venda - ${resolvedSaleId}` : "Vendas";
 
   useEffect(() => {
     const stored = localStorage.getItem("saleSellerId") || "";
@@ -94,7 +108,7 @@ export default function VendasClientPage({ saleId }: VendasClientPageProps) {
           />
         </div>
       </div>
-      <SaleForm saleId={saleId} sellerId={sellerId} onSellerChange={setSellerId} />
+      <SaleForm saleId={resolvedSaleId || undefined} sellerId={sellerId} onSellerChange={setSellerId} />
       <Toaster position="top-right" richColors duration={2000} />
     </div>
   );

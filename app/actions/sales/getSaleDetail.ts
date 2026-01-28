@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { sales } from "@/app/lib/db/schema/sales";
@@ -68,7 +68,7 @@ export async function getSaleDetail(token: string, saleId: string): Promise<Sale
     })
     .from(sales)
     .leftJoin(clients, eq(clients.id, sales.clientId))
-    .where(eq(sales.id, id));
+    .where(and(eq(sales.id, id), isNull(sales.deletedAt)));
 
   if (!sale) {
     throw new Error("Venda não encontrada.");

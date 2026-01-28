@@ -4,7 +4,7 @@ import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { PieChart } from "@mui/x-charts/PieChart";
 import Box from "@mui/material/Box";
-import { BarChart3, CreditCard, Receipt, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, CreditCard, FileDown, Receipt, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useSalesReport } from "@/app/hooks/useSalesReport";
 import { formatCurrencyAxis } from "@/app/lib/formatters/formatCurrencyAxis";
@@ -12,6 +12,7 @@ import { formatCurrencyAxis } from "@/app/lib/formatters/formatCurrencyAxis";
 export default function RelatoriosClientPage() {
   const {
     loading,
+    report,
     start,
     end,
     setDateRange,
@@ -40,9 +41,54 @@ export default function RelatoriosClientPage() {
     holidays,
   } = useSalesReport();
 
+  const handleExportPdf = async () => {
+    const target = document.getElementById("sales-report");
+    if (!target) return;
+    const printStyleId = "sales-report-print-style";
+    const existingStyle = document.getElementById(printStyleId);
+    if (existingStyle) existingStyle.remove();
+    const styleEl = document.createElement("style");
+    styleEl.id = printStyleId;
+    styleEl.textContent = `
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 10mm;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #sales-report,
+        #sales-report * {
+          visibility: visible !important;
+        }
+        #sales-report {
+          position: absolute !important;
+          inset: 0 auto auto 0 !important;
+          width: 190mm !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          transform: scale(0.92);
+          transform-origin: top left;
+        }
+        .report-summary-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    const cleanup = () => {
+      styleEl.remove();
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.print();
+  };
+
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6" id="sales-report">
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
         <div>
           <div className="mb-2 flex items-center gap-3">
@@ -59,6 +105,16 @@ export default function RelatoriosClientPage() {
         </div>
 
         <div className="flex w-full flex-col flex-wrap items-end gap-3 sm:flex-row sm:items-center sm:justify-end xl:w-auto xl:ml-auto">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={loading || !report}
+            className="order-3 sm:order-1 inline-flex h-11 items-center gap-2 rounded-xl border border-[#e6e1e8] bg-white px-4 text-sm font-bold text-text-main shadow-sm transition hover:bg-background-light disabled:opacity-60 dark:border-[#452b4d] dark:bg-surface-dark dark:text-white dark:hover:bg-white/10"
+            title="Salvar relatório em PDF"
+          >
+            <FileDown className="h-4 w-4" />
+            PDF
+          </button>
           <div className="order-2 sm:order-1 flex rounded-2xl border border-[#e6e1e8] dark:border-[#452b4d] bg-surface-light dark:bg-surface-dark p-1.5 shadow-sm">
             {timeframeOptions.map((option) => (
               <button
@@ -111,7 +167,7 @@ export default function RelatoriosClientPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 report-summary-grid">
         {summaryCards.map((card) => {
           const Icon =
             card.title === "Total de Vendas"

@@ -71,15 +71,19 @@ async function getTotals(db: ReturnType<typeof getDb>, start: string, end: strin
       salesCount: sql<number>`count(${sales.id})`,
     })
     .from(sales)
-    .where(dateCondition);
+    .where(and(dateCondition, isNull(sales.deletedAt)));
 
   const [itemsAgg] = await db
     .select({
       totalItems: sql<number>`coalesce(sum(${saleItems.quantity}), 0)`,
     })
     .from(saleItems)
+    .leftJoin(sales, eq(sales.id, saleItems.saleId))
     .where(
-      sql`${saleItems.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
+      and(
+        sql`${saleItems.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
+        isNull(sales.deletedAt),
+      ),
     );
 
   const totalSales = Number(salesAgg?.totalSales ?? 0);
@@ -108,7 +112,12 @@ async function getTimeline(
       totalAmount: sql<string>`sum(${sales.totalAmount})`.as("total_amount"),
     })
     .from(sales)
-    .where(sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`)
+    .where(
+      and(
+        sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
+        isNull(sales.deletedAt),
+      ),
+    )
     .groupBy(bucket)
     .orderBy(asc(bucket));
 
@@ -136,7 +145,12 @@ async function getPaymentTimeline(
       pix: sql<string>`coalesce(sum(${sales.pixAmount}), 0)`.as("pix"),
     })
     .from(sales)
-    .where(sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`)
+    .where(
+      and(
+        sql`${sales.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
+        isNull(sales.deletedAt),
+      ),
+    )
     .groupBy(bucket)
     .orderBy(asc(bucket));
 
@@ -165,7 +179,8 @@ async function getCategoryBreakdown(db: ReturnType<typeof getDb>, start: string,
         sql`${saleItems.saleDate} between to_date(${start}, 'YYYY-MM-DD') and to_date(${end}, 'YYYY-MM-DD')`,
       ),
     )
-    .where(isNull(categories.deletedAt))
+    .leftJoin(sales, eq(sales.id, saleItems.saleId))
+    .where(and(isNull(categories.deletedAt), isNull(sales.deletedAt)))
     .groupBy(categories.id, categories.name)
     .orderBy(desc(sql`coalesce(sum(${saleItems.lineTotal}), 0)`));
 

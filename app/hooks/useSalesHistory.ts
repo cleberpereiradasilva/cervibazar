@@ -149,7 +149,10 @@ export function useSalesHistory() {
     }
     try {
       setDeleting(true);
-      await deleteSale(token, saleToDelete.id);
+      await deleteSale(token, {
+        saleId: saleToDelete.id,
+        sellerId: sellerId === "all" ? null : sellerId,
+      });
       setSales((prev) => prev.filter((sale) => sale.id !== saleToDelete.id));
       toast.success("Venda removida com sucesso.");
     } catch (error: any) {
