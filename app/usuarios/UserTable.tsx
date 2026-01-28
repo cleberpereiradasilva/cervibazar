@@ -104,10 +104,10 @@ export default function UserTable({
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={user.role === "admin" ? "primary" : "secondary"}
-                      aria-label={`Perfil ${user.role === "admin" ? "Admin" : "Caixa"}`}
+                      variant={user.role === "root" ? "primary" : user.role === "admin" ? "secondary" : "accent"}
+                      aria-label={`Perfil ${user.role === "root" ? "Root" : user.role === "admin" ? "Admin" : "Caixa"}`}
                     >
-                      {user.role === "admin" ? "Admin" : "Caixa"}
+                      {user.role === "root" ? "Root" : user.role === "admin" ? "Admin" : "Caixa"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

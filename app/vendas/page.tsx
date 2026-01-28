@@ -1,5 +1,6 @@
 import SidebarLayout from "../sidebar";
 import VendasClientPage from "./VendasClientPage";
+import { Suspense } from "react";
 
 type VendasPageProps = {
   searchParams?: { edit?: string | string[] };
@@ -11,7 +12,9 @@ export default function VendasPage({ searchParams }: VendasPageProps) {
     (Array.isArray(rawEdit) ? rawEdit[0] : rawEdit)?.trim() ?? "";
   return (
     <SidebarLayout>
-      <VendasClientPage saleId={saleId || undefined} />
+      <Suspense fallback={null}>
+        <VendasClientPage saleId={saleId || undefined} />
+      </Suspense>
     </SidebarLayout>
   );
 }

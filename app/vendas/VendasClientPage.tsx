@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { listUsers } from "@/app/actions/users/listUsers";
 import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { Select } from "@/components/ui/select";
@@ -27,23 +28,30 @@ export default function VendasClientPage({ saleId }: VendasClientPageProps) {
   const [sellerId, setSellerId] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [resolvedSaleId, setResolvedSaleId] = useState(saleId ?? "");
+  const searchParams = useSearchParams();
+  const clearedAfterEditRef = useRef(false);
+  const sellerSelectRef = useRef<HTMLSelectElement | null>(null);
 
   useEffect(() => {
-    if (saleId) {
-      setResolvedSaleId(saleId);
+    const edit = searchParams.get("edit")?.trim() ?? "";
+    const nextId = saleId || edit;
+    setResolvedSaleId(nextId);
+    if (!nextId) {
+      clearedAfterEditRef.current = true;
+      setSellerId("");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("saleSellerId");
+      }
+    }
+  }, [saleId, searchParams]);
+
+  const title = resolvedSaleId ? "Editar Venda" : "Vendas";
+
+  useEffect(() => {
+    if (clearedAfterEditRef.current) {
+      clearedAfterEditRef.current = false;
       return;
     }
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const edit = params.get("edit")?.trim();
-    if (edit) {
-      setResolvedSaleId(edit);
-    }
-  }, [saleId]);
-
-  const title = resolvedSaleId ? `Editar Venda - ${resolvedSaleId}` : "Vendas";
-
-  useEffect(() => {
     const stored = localStorage.getItem("saleSellerId") || "";
     if (stored) {
       setSellerId(stored);
@@ -95,20 +103,26 @@ export default function VendasClientPage({ saleId }: VendasClientPageProps) {
             Selecione quantidades e valores por categoria para fechar a venda.
           </p>
         </div>
-        <div className="flex flex-col gap-1 min-w-[220px]">
-          <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
-            Vendedor da venda
-          </label>
-          <Select
-            value={sellerId}
-            onChange={(event) => setSellerId(event.target.value)}
-            options={userOptions}
-            placeholder={loadingUsers ? "Carregando..." : "Selecione o vendedor"}
-            disabled={loadingUsers}
-          />
-        </div>
+      <div className="flex flex-col gap-1 min-w-[220px]">
+        <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
+          Vendedor da venda
+        </label>
+        <Select
+          ref={sellerSelectRef}
+          value={sellerId}
+          onChange={(event) => setSellerId(event.target.value)}
+          options={userOptions}
+          placeholder={loadingUsers ? "Carregando..." : "Selecione o vendedor"}
+          disabled={loadingUsers}
+        />
       </div>
-      <SaleForm saleId={resolvedSaleId || undefined} sellerId={sellerId} onSellerChange={setSellerId} />
+      </div>
+      <SaleForm
+        saleId={resolvedSaleId || undefined}
+        sellerId={sellerId}
+        onSellerChange={setSellerId}
+        onSellerMissing={() => sellerSelectRef.current?.focus()}
+      />
       <Toaster position="top-right" richColors duration={2000} />
     </div>
   );

@@ -29,7 +29,7 @@ const usernameSchema = z
   .max(50, "Login deve ter no maximo 50 caracteres.")
   .regex(/^[a-z]+\.[a-z]+$/, "Use o formato nome.sobrenome apenas com letras.");
 
-const roleSchema = z.enum(["admin", "caixa"], {
+const roleSchema = z.enum(["admin", "caixa", "root"], {
   errorMap: () => ({ message: "Selecione um perfil valido." }),
 });
 
@@ -47,14 +47,14 @@ type UserFormProps = {
     username: string;
     password?: string;
     confirmPassword?: string;
-    role: "admin" | "caixa";
+    role: "admin" | "caixa" | "root";
   }) => Promise<{ ok: boolean; error: string | null }>;
   onCancelEdit: () => void;
   editingUser?: {
     id: string;
     name: string;
     username: string;
-    role: "admin" | "caixa";
+    role: "admin" | "caixa" | "root";
   } | null;
   saving: boolean;
   error?: string | null;
@@ -71,7 +71,7 @@ export default function UserForm({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "caixa" | "">("");
+  const [role, setRole] = useState<"admin" | "caixa" | "root" | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -313,10 +313,11 @@ export default function UserForm({
               options={[
                 { value: "admin", label: "Administrador" },
                 { value: "caixa", label: "Operador de Caixa" },
+                { value: "root", label: "Root" },
               ]}
               value={role}
               onChange={(event) => {
-                const value = event.target.value as "admin" | "caixa" | "";
+                const value = event.target.value as "admin" | "caixa" | "root" | "";
                 setRole(value);
                 setTouched((prev) => ({ ...prev, role: true }));
                 validateField("role", { role: value });

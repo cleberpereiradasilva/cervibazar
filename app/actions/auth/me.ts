@@ -9,7 +9,7 @@ export type MeResponse = {
   id: string;
   name: string;
   username: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
 };
 
 export async function me(token: string): Promise<MeResponse> {

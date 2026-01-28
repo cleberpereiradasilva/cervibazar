@@ -11,7 +11,7 @@ export type PublicUser = {
   id: string;
   name: string;
   username: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
   createdAt: Date;
   updatedAt: Date;
 };
@@ -21,13 +21,13 @@ type CreateInput = {
   username: string;
   password: string;
   confirmPassword: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
 };
 
 type UpdateInput = {
   name: string;
   username: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
   password?: string;
   confirmPassword?: string;
 };
@@ -106,7 +106,7 @@ export function useUsers() {
   const stats = useMemo(
     () => ({
       total: users.length,
-      admins: users.filter((user) => user.role === "admin").length,
+      admins: users.filter((user) => user.role === "admin" || user.role === "root").length,
       operators: users.filter((user) => user.role === "caixa").length,
     }),
     [users]

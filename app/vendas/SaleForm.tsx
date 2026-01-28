@@ -59,9 +59,15 @@ type SaleFormProps = {
   saleId?: string;
   sellerId?: string;
   onSellerChange?: (id: string) => void;
+  onSellerMissing?: () => void;
 };
 
-export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormProps) {
+export default function SaleForm({
+  saleId,
+  sellerId,
+  onSellerChange,
+  onSellerMissing,
+}: SaleFormProps) {
   const router = useRouter();
   const resolvedSaleId = useMemo(() => (saleId ? saleId.trim() : ""), [saleId]);
   const { categories } = useCategories();
@@ -462,6 +468,7 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
 
     if (!sellerId) {
       toast.error("Selecione o vendedor.");
+      onSellerMissing?.();
       return;
     }
 
@@ -501,6 +508,8 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
         toast.success("Venda cadastrada com sucesso!");
       }
       resetForm();
+      setPaymentReviewConfirmed(false);
+      setNeedsPaymentReview(false);
     } catch {
       toast.error(resolvedSaleId ? "Erro ao salvar a venda!" : "Erro ao efetuar a venda!");
       setSubmissionState("failed");

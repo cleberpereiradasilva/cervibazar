@@ -15,7 +15,7 @@ function getSecret() {
 type TokenPayload = {
   sub: string;
   username: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
 };
 
 export async function signAuthToken(payload: TokenPayload) {
