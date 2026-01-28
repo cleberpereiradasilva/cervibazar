@@ -37,7 +37,7 @@ export function userUpdateSchema() {
           /^[a-z]+\.[a-z]+$/,
           "Use o formato nome.sobrenome apenas com letras."
         ),
-      role: z.enum(["admin", "caixa"], {
+      role: z.enum(["admin", "caixa", "root"], {
         errorMap: () => ({ message: "Selecione um perfil valido." }),
       }),
       password: optionalPassword,

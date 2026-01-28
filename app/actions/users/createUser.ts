@@ -10,7 +10,7 @@ export type CreateUserInput = {
   username: string;
   password: string;
   confirmPassword: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
 };
 
 export async function createUser(token: string, input: CreateUserInput) {

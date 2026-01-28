@@ -40,6 +40,7 @@ export default function RelatoriosClientPage() {
     highlightedDays,
     holidays,
   } = useSalesReport();
+  const timeframeLabel = timeframeOptions.find((option) => option.value === timeframe)?.label ?? "";
 
   const handleExportPdf = async () => {
     const target = document.getElementById("sales-report");
@@ -54,6 +55,16 @@ export default function RelatoriosClientPage() {
         @page {
           size: A4 portrait;
           margin: 10mm;
+        }
+        .print-hide {
+          display: none !important;
+        }
+        .print-timeframe-chip {
+          display: inline-flex !important;
+        }
+        .print-page-break {
+          break-before: page !important;
+          page-break-before: always !important;
         }
         body * {
           visibility: hidden !important;
@@ -73,6 +84,9 @@ export default function RelatoriosClientPage() {
         }
         .report-summary-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+        .report-category-grid {
+          grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
         }
       }
     `;
@@ -104,21 +118,21 @@ export default function RelatoriosClientPage() {
           </p>
         </div>
 
-        <div className="flex w-full flex-col flex-wrap items-end gap-3 sm:flex-row sm:items-center sm:justify-end xl:w-auto xl:ml-auto">
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            disabled={loading || !report}
-            className="order-3 sm:order-1 inline-flex h-11 items-center gap-2 rounded-xl border border-[#e6e1e8] bg-white px-4 text-sm font-bold text-text-main shadow-sm transition hover:bg-background-light disabled:opacity-60 dark:border-[#452b4d] dark:bg-surface-dark dark:text-white dark:hover:bg-white/10"
-            title="Salvar relatório em PDF"
-          >
-            <FileDown className="h-4 w-4" />
-            PDF
-          </button>
-          <div className="order-2 sm:order-1 flex rounded-2xl border border-[#e6e1e8] dark:border-[#452b4d] bg-surface-light dark:bg-surface-dark p-1.5 shadow-sm">
-            {timeframeOptions.map((option) => (
-              <button
-                key={option.value}
+      <div className="flex w-full flex-col flex-wrap items-end gap-3 sm:flex-row sm:items-center sm:justify-end xl:w-auto xl:ml-auto">
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          disabled={loading || !report}
+          className="order-3 sm:order-1 inline-flex h-11 items-center gap-2 rounded-xl border border-[#e6e1e8] bg-white px-4 text-sm font-bold text-text-main shadow-sm transition hover:bg-background-light disabled:opacity-60 dark:border-[#452b4d] dark:bg-surface-dark dark:text-white dark:hover:bg-white/10 print-hide"
+          title="Salvar relatório em PDF"
+        >
+          <FileDown className="h-4 w-4" />
+          PDF
+        </button>
+        <div className="order-2 sm:order-1 flex rounded-2xl border border-[#e6e1e8] dark:border-[#452b4d] bg-surface-light dark:bg-surface-dark p-1.5 shadow-sm print-hide">
+          {timeframeOptions.map((option) => (
+            <button
+              key={option.value}
                 className={`px-5 py-2 text-sm font-bold rounded-xl transition-all ${
                   isTimeframeActive(option.value)
                     ? "bg-primary text-white shadow-md"
@@ -130,7 +144,10 @@ export default function RelatoriosClientPage() {
                 {option.label}
               </button>
             ))}
-          </div>
+        </div>
+        <span className="order-2 sm:order-1 hidden rounded-full border border-[#e6e1e8] bg-white px-3 py-1 text-xs font-bold text-text-secondary print-timeframe-chip">
+          {timeframeLabel}
+        </span>
 
           <div className="order-1 sm:order-2 flex w-full items-center gap-2 sm:w-auto sm:justify-end">
             <div className="flex h-[46px] flex-1 items-center gap-2 rounded-xl border border-[#e6e1e8] bg-surface-light px-3 shadow-sm transition-colors dark:border-[#452b4d] dark:bg-surface-dark focus-within:border-primary sm:flex-none">
@@ -218,7 +235,7 @@ export default function RelatoriosClientPage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 report-category-grid">
         <div className="lg:col-span-2 flex h-[420px] flex-col rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -336,7 +353,7 @@ export default function RelatoriosClientPage() {
         </div>
 
         <div className="flex flex-col rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3">
             <h3 className="flex items-center gap-2 text-lg font-bold text-text-main dark:text-white">
               <div className="flex size-8 items-center justify-center rounded-full bg-secondary/15 text-secondary">
                 <ShoppingBag className="h-4 w-4" />
@@ -426,7 +443,7 @@ export default function RelatoriosClientPage() {
         </div>
       </div>
 
-        <div className="rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark">
+      <div className="rounded-3xl border border-[#e6e1e8] bg-surface-light p-6 shadow-sm dark:border-[#452b4d] dark:bg-surface-dark print-page-break">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <h3 className="flex items-center gap-2 text-lg font-bold text-text-main dark:text-white">

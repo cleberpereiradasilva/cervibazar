@@ -200,16 +200,16 @@ export default function HistoricoClientPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="!m-0 !h-5 !w-5 !gap-0 !p-0"
+                            className="!m-0.5 !h-9 !w-9 !gap-0 !p-2 !rounded-full border border-border shadow-sm"
                             aria-label="Ver venda"
                             style={{ cursor: "pointer" }}
                           >
-                            <Lucide.FileText className="h-4 w-4" />
+                            <Lucide.FileText className="h-5 w-5" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="!m-0 !h-5 !w-5 !p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="!m-0.5 !h-9 !w-9 !p-2 !rounded-full border border-red-200 text-red-600 shadow-sm hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-900/20"
                             aria-label="Excluir venda"
                             style={{ cursor: "pointer" }}
                             onClick={(event) => {
@@ -217,7 +217,7 @@ export default function HistoricoClientPage() {
                               openDelete(sale);
                             }}
                           >
-                            <Lucide.Trash2 className="h-4 w-4 text-red-600" />
+                            <Lucide.Trash2 className="h-5 w-5 text-red-600" />
                           </Button>
                         </div>
                       </TableCell>

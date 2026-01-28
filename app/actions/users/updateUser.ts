@@ -8,7 +8,7 @@ export type UpdateUserInput = {
   id: string;
   name: string;
   username: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
   password?: string;
   confirmPassword?: string;
 };

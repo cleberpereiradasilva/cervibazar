@@ -6,7 +6,7 @@ import { getClientToken } from "@/app/lib/auth/getClientToken";
 type CurrentUser = {
   id: string;
   name: string;
-  role: "admin" | "caixa";
+  role: "admin" | "caixa" | "root";
 };
 
 export function useCurrentUser() {
@@ -31,11 +31,15 @@ export function useCurrentUser() {
     }
 
     const name = fromCookie("user_name");
-    const role = fromCookie("user_role") as "admin" | "caixa" | "";
+    const role = fromCookie("user_role") as "admin" | "caixa" | "root" | "";
     const id = fromCookie("user_id");
 
     if (name && role) {
-      setUser({ id: id || "unknown", name, role: role === "admin" ? "admin" : "caixa" });
+      setUser({
+        id: id || "unknown",
+        name,
+        role: role === "root" ? "root" : role === "admin" ? "admin" : "caixa",
+      });
     } else {
       setUser(null);
     }

@@ -173,6 +173,10 @@ export function useSalesHistory() {
       "Telefone",
       "Total de Itens",
       "Valor Total",
+      "Crédito",
+      "Débito",
+      "Dinheiro",
+      "Pix",
       "Vendedor",
       "Troco",
     ];
@@ -183,6 +187,10 @@ export function useSalesHistory() {
         hour: "2-digit",
         minute: "2-digit",
       });
+      const credit = sale.creditAmount ?? "";
+      const debit = sale.debitAmount ?? "";
+      const cash = sale.cashAmount ?? "";
+      const pix = sale.pixAmount ?? "";
       return [
         dateLabel,
         timeLabel,
@@ -190,6 +198,10 @@ export function useSalesHistory() {
         sale.clientPhone ?? "N/D",
         sale.totalItems,
         sale.totalAmount,
+        Number(credit) > 0 ? credit : "",
+        Number(debit) > 0 ? debit : "",
+        Number(cash) > 0 ? cash : "",
+        Number(pix) > 0 ? pix : "",
         sale.sellerName ?? "N/D",
         sale.changeAmount ?? "",
       ]

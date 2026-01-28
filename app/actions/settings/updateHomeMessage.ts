@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 
 export async function updateHomeMessage(token: string, input: { message: string }) {
   const auth = await verifyAuthToken(token);
-  if (auth.role !== "admin") {
+  if (auth.role !== "admin" && auth.role !== "root") {
     throw new Error("Apenas administradores podem atualizar a frase.");
   }
   const data = homeMessageSchema().parse(input);

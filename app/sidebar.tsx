@@ -65,7 +65,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     { label: "Fechamento de Caixa", icon: Lock, href: "/fechamento" },
     { label: "Relatórios de Vendas", icon: BarChart3, href: "/relatorios" },
     { label: "Clientes", icon: Users, href: "/clientes" },
-    { label: "Gerenciamento de Usuários", icon: UserCog, href: "/usuarios" },
+    { label: "Usuários", icon: UserCog, href: "/usuarios" },
     { label: "Motivos de Sangria", icon: NotebookPen, href: "/motivos" },
     { label: "Categorias", icon: TagsIcon, href: "/categorias" },
     { label: "Calendario", icon: Settings2, href: "/administrativo" },
@@ -121,7 +121,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
         <Separator className="my-4" />
 
-        {currentUser?.role === "admin" && (
+        {(currentUser?.role === "admin" || currentUser?.role === "root") && (
           <div className="space-y-2">
             {!collapsed && (
               <p className="px-4 text-xs font-bold uppercase tracking-widest text-text-secondary/60">
@@ -210,7 +210,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 {currentUser?.name || "Usuário"}
               </span>
               <Badge variant="accent" aria-label="Cargo do usuário">
-                {currentUser?.role === "admin"
+                {currentUser?.role === "root"
+                  ? "Root"
+                  : currentUser?.role === "admin"
                   ? "Administrador"
                   : currentUser?.role === "caixa"
                   ? "Caixa"

@@ -31,7 +31,7 @@ export function userInputSchema() {
         .string({ required_error: "Confirmacao de senha e obrigatoria." })
         .min(8, "Confirmacao deve ter pelo menos 8 caracteres.")
         .max(64, "Confirmacao deve ter no maximo 64 caracteres."),
-      role: z.enum(["admin", "caixa"], {
+      role: z.enum(["admin", "caixa", "root"], {
         errorMap: () => ({ message: "Selecione um perfil valido." }),
       }),
     })

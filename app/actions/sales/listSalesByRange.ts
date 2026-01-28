@@ -15,6 +15,10 @@ export type SaleSummary = {
   totalItems: number;
   sellerName: string | null;
   changeAmount: string | null;
+  creditAmount: string | null;
+  debitAmount: string | null;
+  cashAmount: string | null;
+  pixAmount: string | null;
   clientName: string | null;
   clientPhone: string | null;
 };
@@ -66,6 +70,10 @@ export async function listSalesByRange(
       saleDate: sales.saleDate,
       totalAmount: sales.totalAmount,
       changeAmount: sales.changeAmount,
+      creditAmount: sales.creditAmount,
+      debitAmount: sales.debitAmount,
+      cashAmount: sales.cashAmount,
+      pixAmount: sales.pixAmount,
       totalItems: sql<number>`coalesce(sum(${saleItems.quantity}), 0)`.as(
         "total_items",
       ),
@@ -88,6 +96,10 @@ export async function listSalesByRange(
       sales.saleDate,
       sales.totalAmount,
       sales.changeAmount,
+      sales.creditAmount,
+      sales.debitAmount,
+      sales.cashAmount,
+      sales.pixAmount,
     )
     .orderBy(desc(sales.createdAt));
 

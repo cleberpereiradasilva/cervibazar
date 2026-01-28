@@ -5,7 +5,7 @@ import { users } from "../db/schema/users";
 import { generateShortId } from "../id/generateShortId";
 import { SEED_ADMIN_ID } from "@/app/constants";
 
-type UserRole = "admin" | "caixa";
+type UserRole = "admin" | "caixa" | "root";
 
 export function userStore() {
   const db = getDb();

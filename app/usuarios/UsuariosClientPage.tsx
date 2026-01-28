@@ -23,7 +23,7 @@ export default function UsuariosClientPage() {
     username: string;
     password?: string;
     confirmPassword?: string;
-    role: "admin" | "caixa";
+    role: "admin" | "caixa" | "root";
   }) => {
     if (editingUser) {
       const { password, confirmPassword, ...rest } = input;
