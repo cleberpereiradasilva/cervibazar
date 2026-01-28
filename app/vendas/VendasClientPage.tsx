@@ -6,7 +6,6 @@ import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { Select } from "@/components/ui/select";
 import { Toaster, toast } from "sonner";
 import SaleForm from "./SaleForm";
-import { useSearchParams } from "next/navigation";
 
 type VendasClientPageProps = {
   saleId?: string;
@@ -24,14 +23,11 @@ function getCookieValue(name: string) {
 }
 
 export default function VendasClientPage({ saleId }: VendasClientPageProps) {
-  const searchParams = useSearchParams();
-  const editParam = searchParams.get("edit")?.trim() || "";
-  const resolvedSaleId = (saleId || editParam).trim() || undefined;
   const [users, setUsers] = useState<UserOption[]>([]);
   const [sellerId, setSellerId] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
 
-  const title = resolvedSaleId ? `Editar Venda - ${resolvedSaleId}` : "Vendas";
+  const title = saleId ? `Editar Venda - ${saleId}` : "Vendas";
 
   useEffect(() => {
     const stored = localStorage.getItem("saleSellerId") || "";
@@ -98,7 +94,7 @@ export default function VendasClientPage({ saleId }: VendasClientPageProps) {
           />
         </div>
       </div>
-      <SaleForm saleId={resolvedSaleId} sellerId={sellerId} onSellerChange={setSellerId} />
+      <SaleForm saleId={saleId} sellerId={sellerId} onSellerChange={setSellerId} />
       <Toaster position="top-right" richColors duration={2000} />
     </div>
   );
