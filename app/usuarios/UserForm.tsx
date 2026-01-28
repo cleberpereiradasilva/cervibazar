@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AtSign, Eye, EyeOff, Info, Lock, LockKeyhole, Save, UserPlus } from "lucide-react";
 import { userInputSchema } from "@/app/lib/validators/userInputSchema";
 import { userUpdateSchema } from "@/app/lib/validators/userUpdateSchema";
@@ -10,6 +10,7 @@ import { Label } from "../../components/ui/label";
 import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/select";
 import { Card } from "../../components/ui/card";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 
 const nameSchema = z
   .string()
@@ -67,6 +68,7 @@ export default function UserForm({
   saving,
   error,
 }: UserFormProps) {
+  const { user: currentUser } = useCurrentUser();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -81,6 +83,15 @@ export default function UserForm({
   const [touched, setTouched] = useState<
     Partial<Record<"name" | "username" | "password" | "confirmPassword" | "role", boolean>>
   >({});
+  const roleOptions = useMemo(() => {
+    const base = [
+      { value: "admin", label: "Administrador" },
+      { value: "caixa", label: "Operador de Caixa" },
+    ];
+    return currentUser?.role === "root"
+      ? [...base, { value: "root", label: "Root" }]
+      : base;
+  }, [currentUser?.role]);
 
   type FieldKey = "name" | "username" | "password" | "confirmPassword" | "role";
 
@@ -310,11 +321,7 @@ export default function UserForm({
             </Label>
             <Select
               id="role"
-              options={[
-                { value: "admin", label: "Administrador" },
-                { value: "caixa", label: "Operador de Caixa" },
-                { value: "root", label: "Root" },
-              ]}
+              options={roleOptions}
               value={role}
               onChange={(event) => {
                 const value = event.target.value as "admin" | "caixa" | "root" | "";

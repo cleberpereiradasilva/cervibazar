@@ -16,6 +16,9 @@ export type CreateUserInput = {
 export async function createUser(token: string, input: CreateUserInput) {
   const auth = await verifyAuthToken(token);
   const payload = userInputSchema().parse(input);
+  if (payload.role === "root" && auth.role !== "root") {
+    throw new Error("Apenas root pode criar usuário root.");
+  }
   const store = userStore();
   const createdUser = await store.add({
     name: payload.name.trim(),
