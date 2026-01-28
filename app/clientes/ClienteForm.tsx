@@ -57,8 +57,8 @@ export default function ClienteForm({
   useEffect(() => {
     if (editingClient) {
       setName(editingClient.name);
-      setPhone(formatPhone(editingClient.phone));
-      setBirthday(formatDateForInput(editingClient.birthday));
+      setPhone(formatPhone(editingClient.phone ?? ""));
+      setBirthday(formatDateForInput(editingClient.birthday ?? null));
     } else {
       setName("");
       setPhone("");

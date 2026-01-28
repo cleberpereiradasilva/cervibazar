@@ -9,6 +9,8 @@ import { BarChart3, CreditCard, Receipt, ShoppingBag, TrendingDown, TrendingUp }
 import { getSalesReport, type SalesReportResponse } from "@/app/actions/reports/getSalesReport";
 import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useCalendarSettings } from "@/app/hooks/useCalendarSettings";
 
 type Timeframe = "daily" | "monthly";
 
@@ -67,6 +69,7 @@ export default function RelatoriosClientPage() {
   const [categoryView, setCategoryView] = useState<"bars" | "pie">("bars");
   const [trendView, setTrendView] = useState<"area" | "line" | "bar">("area");
   const [paymentView, setPaymentView] = useState<"line" | "bar">("bar");
+  const { highlightedDays } = useCalendarSettings();
 
   const timeframeOptions: { label: string; value: Timeframe }[] = [
     { label: "Diário", value: "daily" },
@@ -206,24 +209,28 @@ export default function RelatoriosClientPage() {
               <span className="text-xs font-bold uppercase text-text-secondary dark:text-[#bcaec4]">
                 De
               </span>
-              <input
-                type="date"
+              <DatePicker
                 value={start}
-                onChange={(event) => setDateRange({ start: event.target.value, end })}
-                lang="pt-BR"
-                className="w-full border-none bg-transparent p-0 text-sm font-bold text-text-main outline-none focus:ring-0 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+                onChange={(value) => setDateRange({ start: value, end })}
+                showIcon={false}
+                variant="ghost"
+                size="sm"
+                highlightedDays={highlightedDays}
+                buttonClassName="h-full w-full justify-start p-0 text-sm font-bold text-text-main hover:bg-transparent dark:text-white"
               />
             </div>
             <div className="flex h-[46px] flex-1 items-center gap-2 rounded-xl border border-[#e6e1e8] bg-surface-light px-3 shadow-sm transition-colors dark:border-[#452b4d] dark:bg-surface-dark focus-within:border-primary sm:flex-none">
               <span className="text-xs font-bold uppercase text-text-secondary dark:text-[#bcaec4]">
                 Até
               </span>
-              <input
-                type="date"
+              <DatePicker
                 value={end}
-                onChange={(event) => setDateRange({ start, end: event.target.value })}
-                lang="pt-BR"
-                className="w-full border-none bg-transparent p-0 text-sm font-bold text-text-main outline-none focus:ring-0 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+                onChange={(value) => setDateRange({ start, end: value })}
+                showIcon={false}
+                variant="ghost"
+                size="sm"
+                highlightedDays={highlightedDays}
+                buttonClassName="h-full w-full justify-start p-0 text-sm font-bold text-text-main hover:bg-transparent dark:text-white"
               />
             </div>
           </div>
