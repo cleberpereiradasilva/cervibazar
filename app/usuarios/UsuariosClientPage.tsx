@@ -10,12 +10,16 @@ import { Sheet } from "../../components/ui/sheet";
 import { Card } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { Toaster, toast } from "sonner";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 
 export default function UsuariosClientPage() {
+  const { user: currentUser } = useCurrentUser();
   const { users, loading, saving, error, stats, create, remove, update } =
     useUsers();
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [permissionOpen, setPermissionOpen] = useState(false);
 
   const handleSubmit = async (input: {
     id?: string;
@@ -128,6 +132,10 @@ export default function UsuariosClientPage() {
           loading={loading}
           onDelete={handleDelete}
           onEdit={(user) => {
+            if (user.role === "root" && currentUser?.role !== "root") {
+              setPermissionOpen(true);
+              return;
+            }
             setEditingUser(user);
             setFormOpen(true);
           }}
@@ -156,6 +164,16 @@ export default function UsuariosClientPage() {
           />
         </div>
       </Sheet>
+
+      <ConfirmDialog
+        open={permissionOpen}
+        title="Você não pode editar esse usuário"
+        description="Apenas usuários root podem editar outro root."
+        confirmLabel="Ok"
+        showCancel={false}
+        onConfirm={() => setPermissionOpen(false)}
+        onCancel={() => setPermissionOpen(false)}
+      />
     </div>
   );
 }
