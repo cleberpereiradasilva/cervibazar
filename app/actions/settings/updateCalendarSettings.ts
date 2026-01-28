@@ -8,7 +8,10 @@ export async function updateCalendarSettings(
   token: string,
   input: { highlightedDays: number[]; holidays: string[] },
 ) {
-  await verifyAuthToken(token);
+  const auth = await verifyAuthToken(token);
+  if (auth.role !== "admin") {
+    throw new Error("Apenas administradores podem atualizar o calendário.");
+  }
   const data = calendarSettingsSchema().parse(input);
   return calendarSettingsStore().update(data.highlightedDays, data.holidays);
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { sql } from "drizzle-orm";
+import { and, isNull, sql } from "drizzle-orm";
 import { verifyAuthToken } from "@/app/lib/auth/jwt";
 import { getDb } from "@/app/lib/db/client";
 import { generateShortId } from "@/app/lib/id/generateShortId";
@@ -38,7 +38,7 @@ export async function closeDay(token: string, input: CloseDayInput) {
     await tx
       .update(sales)
       .set({ closingId, updatedAt: new Date() })
-      .where(sql`${saleDayExpr} = ${targetDate}`);
+      .where(and(sql`${saleDayExpr} = ${targetDate}`, isNull(sales.deletedAt)));
 
     await tx
       .update(sangrias)

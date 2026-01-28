@@ -60,6 +60,7 @@ export function DatePicker({
           variant={variant}
           size={size}
           disabled={disabled}
+          suppressHydrationWarning
           className={cn(
             "w-full justify-start text-left font-bold text-text-main dark:text-white",
             !value && "text-text-secondary dark:text-[#bcaec4]",
