@@ -12,7 +12,7 @@ type SaleItemInput = {
 };
 
 type SaleInput = {
-  customer: { name: string; phone: string; birthDate?: string };
+  customer: { name: string; phone?: string | null; birthDate?: string | null };
   items: SaleItemInput[];
   payments: { credito: number; debito: number; dinheiro: number; pix: number };
   saleDate: string;
@@ -24,7 +24,7 @@ type SaleUpdateInput = SaleInput & {
   saleId: string;
 };
 
-const normalizePhone = (phone: string) => phone.replace(/\D/g, "");
+const normalizePhone = (phone?: string | null) => (phone ?? "").replace(/\D/g, "");
 
 const parseSaleDate = (value: string) => {
   const [y, m, d] = value.split("-").map(Number);
@@ -59,9 +59,6 @@ export function saleStore() {
     const pendingAmount = Math.max(0, totalAmount - totalPaid);
 
     const normalizedPhone = normalizePhone(input.customer.phone);
-    if (!normalizedPhone) {
-      throw new Error("Informe o telefone do cliente.");
-    }
 
     const now = new Date();
     const saleDay = parseSaleDate(input.saleDate);
@@ -78,9 +75,9 @@ export function saleStore() {
         .from(clients)
         .where(isNull(clients.deletedAt));
 
-      const existingClient = clientsResult.find(
-        (client) => normalizePhone(client.phone) === normalizedPhone
-      );
+      const existingClient = normalizedPhone
+        ? clientsResult.find((client) => normalizePhone(client.phone) === normalizedPhone)
+        : undefined;
 
       let clientId = existingClient?.id;
 
@@ -88,17 +85,13 @@ export function saleStore() {
         if (!input.customer.name.trim()) {
           throw new Error("Informe o nome do cliente.");
         }
-        if (!input.customer.birthDate) {
-          throw new Error("Informe a data de nascimento do cliente.");
-        }
-
         const newClientId = generateShortId();
         const createdAt = new Date();
         await tx.insert(clients).values({
           id: newClientId,
           name: input.customer.name.trim(),
-          phone: normalizedPhone,
-          birthday: new Date(input.customer.birthDate),
+          phone: normalizedPhone || null,
+          birthday: input.customer.birthDate ? new Date(input.customer.birthDate) : null,
           createdBy: input.userId,
           createdAt,
           updatedAt: createdAt,
@@ -163,16 +156,13 @@ export function saleStore() {
     const pendingAmount = Math.max(0, totalAmount - totalPaid);
 
     const normalizedPhone = normalizePhone(input.customer.phone);
-    if (!normalizedPhone) {
-      throw new Error("Informe o telefone do cliente.");
-    }
 
     const saleDay = parseSaleDate(input.saleDate);
     const now = new Date();
 
     return db.transaction(async (tx) => {
       const [existingSale] = await tx
-        .select({ id: sales.id })
+        .select({ id: sales.id, clientId: sales.clientId })
         .from(sales)
         .where(eq(sales.id, input.saleId));
 
@@ -191,32 +181,38 @@ export function saleStore() {
         .from(clients)
         .where(isNull(clients.deletedAt));
 
-      const existingClient = clientsResult.find(
-        (client) => normalizePhone(client.phone) === normalizedPhone
-      );
+      const existingClient = normalizedPhone
+        ? clientsResult.find((client) => normalizePhone(client.phone) === normalizedPhone)
+        : undefined;
 
-      let clientId = existingClient?.id;
+      let clientId = existingClient?.id ?? existingSale.clientId;
 
-      if (!clientId) {
+      if (!clientId || (normalizedPhone && !existingClient)) {
         if (!input.customer.name.trim()) {
           throw new Error("Informe o nome do cliente.");
         }
-        if (!input.customer.birthDate) {
-          throw new Error("Informe a data de nascimento do cliente.");
-        }
-
         const newClientId = generateShortId();
         const createdAt = new Date();
         await tx.insert(clients).values({
           id: newClientId,
           name: input.customer.name.trim(),
-          phone: normalizedPhone,
-          birthday: new Date(input.customer.birthDate),
+          phone: normalizedPhone || null,
+          birthday: input.customer.birthDate ? new Date(input.customer.birthDate) : null,
           createdBy: input.userId,
           createdAt,
           updatedAt: createdAt,
         });
         clientId = newClientId;
+      } else {
+        await tx
+          .update(clients)
+          .set({
+            name: input.customer.name.trim(),
+            phone: normalizedPhone || null,
+            birthday: input.customer.birthDate ? new Date(input.customer.birthDate) : null,
+            updatedAt: now,
+          })
+          .where(eq(clients.id, clientId));
       }
 
       await tx
@@ -257,5 +253,22 @@ export function saleStore() {
     });
   };
 
-  return { create, update };
+  const remove = async (saleId: string) => {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({ id: sales.id })
+        .from(sales)
+        .where(eq(sales.id, saleId));
+
+      if (!existing) {
+        throw new Error("Venda não encontrada.");
+      }
+
+      await tx.delete(saleItems).where(eq(saleItems.saleId, saleId));
+      await tx.delete(sales).where(eq(sales.id, saleId));
+      return true;
+    });
+  };
+
+  return { create, update, remove };
 }

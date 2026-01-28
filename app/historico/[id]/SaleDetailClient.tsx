@@ -134,7 +134,9 @@ export default function SaleDetailClient({ saleId }: Props) {
           </div>
           <div className="space-y-1">
             <p className="text-xs font-semibold text-text-secondary">Telefone</p>
-            <p className="text-sm font-bold text-text-main dark:text-white">{sale.client.phone}</p>
+            <p className="text-sm font-bold text-text-main dark:text-white">
+              {sale.client.phone || "—"}
+            </p>
           </div>
           <div className="space-y-1">
             <p className="text-xs font-semibold text-text-secondary">Data de Nascimento</p>

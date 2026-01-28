@@ -22,12 +22,14 @@ type ClienteTableProps = {
   onEdit: (client: PublicClient) => void;
 };
 
-function formatDate(date: Date) {
+function formatDate(date: Date | null) {
+  if (!date) return "—";
   const d = new Date(date);
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(d);
 }
 
-function formatPhoneDisplay(phone: string) {
+function formatPhoneDisplay(phone: string | null) {
+  if (!phone) return "—";
   const digits = phone.replace(/\D/g, "");
   if (digits.length === 10) {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;

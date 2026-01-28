@@ -1,0 +1,2 @@
+ALTER TABLE "clients" ALTER COLUMN "phone" DROP NOT NULL;
+ALTER TABLE "clients" ALTER COLUMN "birthday" DROP NOT NULL;

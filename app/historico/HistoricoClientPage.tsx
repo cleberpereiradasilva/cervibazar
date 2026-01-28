@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { listSalesByDate, type SaleSummary } from "@/app/actions/sales/listSalesByDate";
-import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Select } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -16,90 +16,51 @@ import {
 } from "@/components/ui/table";
 import * as Lucide from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Toaster, toast } from "sonner";
-
-function todayISO() {
-  const now = new Date();
-  const tzOffset = now.getTimezoneOffset() * 60000;
-  return new Date(now.getTime() - tzOffset).toISOString().slice(0, 10);
-}
+import { Toaster } from "sonner";
+import { useSalesHistory } from "@/app/hooks/useSalesHistory";
 
 export default function HistoricoClientPage() {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState<string>(todayISO());
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [debouncedName, setDebouncedName] = useState("");
-  const [debouncedPhone, setDebouncedPhone] = useState("");
-  const [sales, setSales] = useState<SaleSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const totalOfDay = useMemo(
-    () =>
-      sales.reduce((sum, sale) => {
-        const val = Number(sale.totalAmount);
-        return sum + (Number.isNaN(val) ? 0 : val);
-      }, 0),
-    [sales]
-  );
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedName(clientName.trim());
-      setDebouncedPhone(clientPhone.trim());
-    }, 350);
-    return () => clearTimeout(handler);
-  }, [clientName, clientPhone]);
-
-  useEffect(() => {
-    const fetchSales = async () => {
-      const token = getClientToken();
-      if (!token) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        return;
-      }
-      try {
-        setLoading(true);
-        const result = await listSalesByDate(token, selectedDate, {
-          clientName: debouncedName,
-          clientPhone: debouncedPhone,
-        });
-        setSales(result);
-      } catch (error: any) {
-        toast.error(error?.message || "Erro ao carregar histórico.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchSales();
-  }, [selectedDate, debouncedName, debouncedPhone]);
-
-  const formatSaleDate = (raw: Date | string) => {
-    if (typeof raw === "string") {
-      const [y, m, d] = raw.split("-").map(Number);
-      if (y && m && d) return new Date(y, m - 1, d).toLocaleDateString("pt-BR");
-    }
-    const parsed = raw instanceof Date ? raw : new Date(raw);
-    const y = parsed.getUTCFullYear();
-    const m = parsed.getUTCMonth();
-    const d = parsed.getUTCDate();
-    return new Date(y, m, d).toLocaleDateString("pt-BR");
-  };
+  const {
+    startDate,
+    endDate,
+    setStartDate,
+    setEndDate,
+    clientName,
+    clientPhone,
+    setClientName,
+    setClientPhone,
+    sellerId,
+    setSellerId,
+    sellerOptions,
+    loadingUsers,
+    sales,
+    loading,
+    totalOfPeriod,
+    deleteOpen,
+    deleting,
+    openDelete,
+    cancelDelete,
+    confirmDelete,
+    handleExport,
+    formatSaleDate,
+    highlightedDays,
+    holidays,
+  } = useSalesHistory();
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <Toaster position="top-right" richColors duration={2000} />
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div className="space-y-3">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-text-main dark:text-white md:text-4xl">
             Histórico de Vendas
           </h2>
           <p className="mt-1 text-text-secondary dark:text-[#bcaec4]">
-            Consulte as vendas por data e visualize os detalhes.
+            Consulte as vendas por período e visualize os detalhes.
           </p>
         </div>
-        <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <Input
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
@@ -113,31 +74,55 @@ export default function HistoricoClientPage() {
             inputMode="tel"
             className="w-full md:w-[200px]"
           />
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            lang="pt-BR"
-            className="w-[170px]"
-          />
-          <Button variant="ghost" onClick={() => setSelectedDate(todayISO())} className="gap-2">
-            <Lucide.CalendarClock className="h-4 w-4" />
-            Hoje
-          </Button>
+          <div className="min-w-[200px]">
+            <Select
+              value={sellerId}
+              onChange={(event) => setSellerId(event.target.value)}
+              options={sellerOptions}
+              placeholder={loadingUsers ? "Carregando..." : "Selecione o vendedor"}
+              disabled={loadingUsers}
+            />
+          </div>
+          <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+            <DatePicker
+              value={startDate}
+              onChange={setStartDate}
+              highlightedDays={highlightedDays}
+              holidays={holidays}
+              buttonClassName="h-11 w-full px-4 md:w-[160px]"
+            />
+            <DatePicker
+              value={endDate}
+              onChange={setEndDate}
+              highlightedDays={highlightedDays}
+              holidays={holidays}
+              buttonClassName="h-11 w-full px-4 md:w-[160px]"
+            />
+          </div>
         </div>
       </div>
 
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-text-secondary">Vendas do dia</p>
-          <div className="flex items-center gap-3 text-sm font-bold">
-            <span className="rounded-full bg-secondary/20 px-3 py-1 text-text-main dark:text-white">
+          <p className="text-sm font-semibold text-text-secondary">Vendas do período</p>
+          <div className="flex flex-wrap items-center gap-3 text-sm font-bold">
+            <span className="inline-flex h-[32px] items-center rounded-full bg-secondary/20 px-3 py-1 text-text-main leading-none dark:text-white">
               {sales.length} venda(s)
             </span>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+            <span className="inline-flex h-[32px] items-center rounded-full bg-primary/10 px-3 py-1 text-primary leading-none">
               Total:{" "}
-              {totalOfDay.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              {totalOfPeriod.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </span>
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              className="h-[32px] gap-2 rounded-full p-0 text-xs font-bold leading-none"
+              disabled={loading || sales.length === 0}
+              title="Exportar o resultado atual"
+            >
+              <Lucide.Download className="h-4 w-4" />
+              Exportar
+            </Button>
           </div>
         </div>
         <div className="mt-3">
@@ -152,7 +137,7 @@ export default function HistoricoClientPage() {
             </div>
           ) : sales.length === 0 ? (
             <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm font-semibold text-text-secondary dark:border-[#452b4d] dark:bg-background-dark/40">
-              Nenhuma venda encontrada para a data selecionada.
+              Nenhuma venda encontrada para o período selecionado.
             </div>
           ) : (
             <Table>
@@ -164,7 +149,7 @@ export default function HistoricoClientPage() {
                   <TableHead>Total de Itens</TableHead>
                   <TableHead>Valor Total</TableHead>
                   <TableHead>Vendedor</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">&nbsp;</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -211,9 +196,30 @@ export default function HistoricoClientPage() {
                         {sale.sellerName ?? "N/D"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" className="gap-2" aria-label="Ver venda">
-                          <Lucide.ArrowRight className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end !gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!m-0 !h-5 !w-5 !gap-0 !p-0"
+                            aria-label="Ver venda"
+                            style={{ cursor: "pointer" }}
+                          >
+                            <Lucide.FileText className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!m-0 !h-5 !w-5 !p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            aria-label="Excluir venda"
+                            style={{ cursor: "pointer" }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openDelete(sale);
+                            }}
+                          >
+                            <Lucide.Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -223,6 +229,17 @@ export default function HistoricoClientPage() {
           )}
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Remover venda"
+        description="Tem certeza que deseja remover esta venda?"
+        confirmLabel="Excluir"
+        confirmTone="danger"
+        loading={deleting}
+        onCancel={cancelDelete}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -10,8 +10,8 @@ import { getClientToken } from "@/app/lib/auth/getClientToken";
 export type PublicClient = {
   id: string;
   name: string;
-  phone: string;
-  birthday: Date;
+  phone: string | null;
+  birthday: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -8,7 +8,7 @@ export type UpdateSaleInput = {
   id: string;
   saleDate: string;
   sellerId: string;
-  customer: { name: string; phone: string; birthDate?: string };
+  customer: { name: string; phone?: string; birthDate?: string };
   items: { categoryId: string; quantity: number; price: number }[];
   payments: { credito: number; debito: number; dinheiro: number; pix: number };
 };

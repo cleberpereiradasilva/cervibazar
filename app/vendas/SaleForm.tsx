@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCategories } from "@/app/hooks/useCategories";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useCalendarSettings } from "@/app/hooks/useCalendarSettings";
 import * as Lucide from "lucide-react";
 import { toast } from "sonner";
 import { searchClients } from "@/app/actions/clients/searchClients";
@@ -35,7 +38,7 @@ type PaymentMethod = "dinheiro" | "debito" | "credito" | "pix";
 type ClientSuggestion = {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   birthday?: Date | string | null;
 };
 
@@ -59,8 +62,10 @@ type SaleFormProps = {
 };
 
 export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormProps) {
+  const router = useRouter();
   const resolvedSaleId = useMemo(() => (saleId ? saleId.trim() : ""), [saleId]);
   const { categories } = useCategories();
+  const { highlightedDays, holidays } = useCalendarSettings();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [entryQuantity, setEntryQuantity] = useState<number>(1);
@@ -127,6 +132,8 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
 
   const isEditing = Boolean(resolvedSaleId);
   const disableAll = submissionState === "submitting" || editLoading;
+  const entryTotal = entryQuantity * entryPrice;
+  const headerTotal = isEditing ? total : entryTotal;
 
   useEffect(() => {
     if (!isEditing || !initialItemsSignature) {
@@ -431,18 +438,15 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
       price: item.price,
     }));
 
-    if (!customer.phone.trim()) {
-      toast.error("Informe o telefone do cliente.");
-      return;
-    }
-
     if (!customer.name.trim()) {
       toast.error("Informe o nome do cliente.");
       return;
     }
 
-    if (!customer.birthDate) {
-      toast.error("Informe a data de nascimento do cliente.");
+    const hasAnyBirthPart = Boolean(birthParts.year || birthParts.month || birthParts.day);
+    const hasFullBirthDate = Boolean(birthParts.year && birthParts.month && birthParts.day);
+    if (hasAnyBirthPart && !hasFullBirthDate) {
+      toast.error("Complete a data de nascimento do cliente.");
       return;
     }
 
@@ -485,6 +489,7 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
           sellerId,
         });
         toast.success("Venda atualizada com sucesso!");
+        router.push("/vendas");
       } else {
         await createSale(token, {
           customer,
@@ -635,7 +640,7 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
                         const parts = splitBirthday(normalizedBirthday);
                         setCustomer({
                           name: sug.name,
-                          phone: formatPhone(sug.phone),
+                          phone: formatPhone(sug.phone ?? ""),
                           birthDate: normalizedBirthday,
                         });
                         setBirthParts(parts);
@@ -645,7 +650,7 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
                       <div className="flex flex-col">
                         <span className="font-semibold text-text-main dark:text-white">{sug.name}</span>
                         <span className="text-xs text-text-secondary dark:text-[#bcaec4]">
-                          {formatPhone(sug.phone)}
+                          {formatPhone(sug.phone ?? "")}
                         </span>
                       </div>
                     </button>
@@ -823,23 +828,21 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
                   <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
                     Data da venda
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
-                      <Lucide.Calendar className="h-4 w-4" />
-                    </span>
-                    <Input
-                      type="date"
-                      className="pl-10"
-                      value={saleDate}
-                      onChange={(e) => setSaleDate(e.target.value)}
-                      disabled={disableAll}
-                    />
-                  </div>
+                  <DatePicker
+                    value={saleDate}
+                    onChange={setSaleDate}
+                    highlightedDays={highlightedDays}
+                    holidays={holidays}
+                    buttonClassName="h-11 w-full justify-start px-4"
+                    disabled={disableAll}
+                  />
                 </div>
                 <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
-                  <div className="text-xs text-text-secondary dark:text-[#bcaec4]">Total</div>
+                  <div className="text-xs text-text-secondary dark:text-[#bcaec4]">
+                    {isEditing ? "Total da venda" : "Total"}
+                  </div>
                   <div className="text-lg font-black">
-                    {(entryQuantity * entryPrice || 0).toLocaleString("pt-BR", {
+                    {(headerTotal || 0).toLocaleString("pt-BR", {
                       style: "currency",
                       currency: "BRL",
                     })}
@@ -992,7 +995,6 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
                     }}
                     disabled={disableAll || lockNonItems}
                   >
-                    <Lucide.Plus className="h-4 w-4" />
                     Total
                   </button>
                 </div>

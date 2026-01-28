@@ -7,7 +7,7 @@ import { saleInputSchema } from "@/app/lib/validators/saleInputSchema";
 export type CreateSaleInput = {
   saleDate: string;
   sellerId: string;
-  customer: { name: string; phone: string; birthDate?: string };
+  customer: { name: string; phone?: string; birthDate?: string };
   items: { categoryId: string; quantity: number; price: number }[];
   payments: { credito: number; debito: number; dinheiro: number; pix: number };
 };

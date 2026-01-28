@@ -11,7 +11,7 @@ export async function searchClients(token: string, term: string) {
   const all = await store.list();
   return all
     .filter((client) => {
-      const clientDigits = client.phone.replace(/\D/g, "");
+      const clientDigits = (client.phone ?? "").replace(/\D/g, "");
       return (
         clientDigits.includes(normalized) || client.name.toLowerCase().includes(term.toLowerCase())
       );

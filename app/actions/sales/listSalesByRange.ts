@@ -19,24 +19,43 @@ export type SaleSummary = {
   clientPhone: string | null;
 };
 
-export async function listSalesByDate(
+function parseDate(value: string): Date {
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("Data inválida. Utilize o formato YYYY-MM-DD.");
+  }
+  return parsed;
+}
+
+export async function listSalesByRange(
   token: string,
-  date: string,
-  filters?: { clientName?: string; clientPhone?: string }
+  startDate: string,
+  endDate: string,
+  filters?: { clientName?: string; clientPhone?: string; sellerId?: string },
 ): Promise<SaleSummary[]> {
   await verifyAuthToken(token);
   const db = getDb();
 
-  const targetDate = sql`to_date(${date}, 'YYYY-MM-DD')`;
+  const start = parseDate(startDate);
+  const end = parseDate(endDate);
+  if (start > end) {
+    throw new Error("A data inicial não pode ser maior que a final.");
+  }
+
   const nameQuery = filters?.clientName?.trim();
   const phoneQueryRaw = filters?.clientPhone?.trim();
   const phoneQuery = phoneQueryRaw ? phoneQueryRaw.replace(/\D/g, "") : "";
-  const conditions = [eq(sales.saleDate, targetDate)];
+  const sellerId = filters?.sellerId?.trim();
+  const dateCondition = sql`${sales.saleDate} between to_date(${startDate}, 'YYYY-MM-DD') and to_date(${endDate}, 'YYYY-MM-DD')`;
+  const conditions = [dateCondition];
   if (nameQuery) {
     conditions.push(sql`${clients.name} ilike ${`%${nameQuery}%`}`);
   }
   if (phoneQuery) {
     conditions.push(sql`${clients.phone} like ${`%${phoneQuery}%`}`);
+  }
+  if (sellerId) {
+    conditions.push(sql`(${sales.sellerId} = ${sellerId} or ${sales.createdBy} = ${sellerId})`);
   }
   const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
 
