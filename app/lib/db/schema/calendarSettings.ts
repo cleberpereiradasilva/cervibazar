@@ -7,6 +7,10 @@ export const calendarSettings = pgTable("calendar_settings", {
     .$type<number[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  holidays: jsonb("holidays")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
 });

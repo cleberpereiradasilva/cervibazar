@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCategories } from "@/app/hooks/useCategories";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useCalendarSettings } from "@/app/hooks/useCalendarSettings";
 import * as Lucide from "lucide-react";
 import { toast } from "sonner";
 import { searchClients } from "@/app/actions/clients/searchClients";
@@ -63,6 +65,7 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
   const router = useRouter();
   const resolvedSaleId = useMemo(() => (saleId ? saleId.trim() : ""), [saleId]);
   const { categories } = useCategories();
+  const { highlightedDays, holidays } = useCalendarSettings();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [entryQuantity, setEntryQuantity] = useState<number>(1);
@@ -825,18 +828,14 @@ export default function SaleForm({ saleId, sellerId, onSellerChange }: SaleFormP
                   <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
                     Data da venda
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
-                      <Lucide.Calendar className="h-4 w-4" />
-                    </span>
-                    <Input
-                      type="date"
-                      className="pl-10"
-                      value={saleDate}
-                      onChange={(e) => setSaleDate(e.target.value)}
-                      disabled={disableAll}
-                    />
-                  </div>
+                  <DatePicker
+                    value={saleDate}
+                    onChange={setSaleDate}
+                    highlightedDays={highlightedDays}
+                    holidays={holidays}
+                    buttonClassName="h-11 w-full justify-start px-4"
+                    disabled={disableAll}
+                  />
                 </div>
                 <div className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-text-main dark:text-white">
                   <div className="text-xs text-text-secondary dark:text-[#bcaec4]">

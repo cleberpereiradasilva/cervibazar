@@ -1,30 +1,12 @@
 "use client";
-
-import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Toaster, toast } from "sonner";
-import { useHomeMessage } from "@/app/hooks/useHomeMessage";
+import { Toaster } from "sonner";
+import { useHomeMessageEditor } from "@/app/hooks/useHomeMessageEditor";
 
 export default function FraseClientPage() {
-  const { message, loading, saving, error, save } = useHomeMessage();
-  const [value, setValue] = useState("");
-
-  useEffect(() => {
-    setValue(message);
-  }, [message]);
-
-  const handleSave = async () => {
-    const result = await save(value);
-    if (result.ok) {
-      toast.success("Frase salva.");
-      return;
-    }
-    if (result.error) {
-      toast.error(result.error);
-    }
-  };
+  const { value, setValue, loading, saving, error, handleSave, count } = useHomeMessageEditor();
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -60,7 +42,7 @@ export default function FraseClientPage() {
           placeholder="Digite a frase que aparece na tela inicial"
         />
         <div className="text-xs text-text-secondary">
-          {value.trim().length}/200
+          {count}/200
         </div>
       </Card>
     </div>

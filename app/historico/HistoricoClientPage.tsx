@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { listSalesByRange, type SaleSummary } from "@/app/actions/sales/listSalesByRange";
-import { deleteSale } from "@/app/actions/sales/deleteSale";
-import { listUsers } from "@/app/actions/users/listUsers";
-import { getClientToken } from "@/app/lib/auth/getClientToken";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select } from "@/components/ui/select";
-import { useCalendarSettings } from "@/app/hooks/useCalendarSettings";
 import {
   Table,
   TableBody,
@@ -22,185 +16,37 @@ import {
 } from "@/components/ui/table";
 import * as Lucide from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Toaster, toast } from "sonner";
-
-function escapeCsvValue(value: string | number | null | undefined) {
-  const str = String(value ?? "");
-  return `"${str.replace(/"/g, '""')}"`;
-}
-
-function todayISO() {
-  const now = new Date();
-  const tzOffset = now.getTimezoneOffset() * 60000;
-  return new Date(now.getTime() - tzOffset).toISOString().slice(0, 10);
-}
-
-function firstOfMonthISO() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const tzOffset = start.getTimezoneOffset() * 60000;
-  return new Date(start.getTime() - tzOffset).toISOString().slice(0, 10);
-}
+import { Toaster } from "sonner";
+import { useSalesHistory } from "@/app/hooks/useSalesHistory";
 
 export default function HistoricoClientPage() {
   const router = useRouter();
-  const [startDate, setStartDate] = useState<string>(firstOfMonthISO());
-  const [endDate, setEndDate] = useState<string>(todayISO());
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [debouncedName, setDebouncedName] = useState("");
-  const [debouncedPhone, setDebouncedPhone] = useState("");
-  const [sellerId, setSellerId] = useState("all");
-  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [sales, setSales] = useState<SaleSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [saleToDelete, setSaleToDelete] = useState<SaleSummary | null>(null);
-  const { highlightedDays } = useCalendarSettings();
-
-  const totalOfPeriod = useMemo(
-    () =>
-      sales.reduce((sum, sale) => {
-        const val = Number(sale.totalAmount);
-        return sum + (Number.isNaN(val) ? 0 : val);
-      }, 0),
-    [sales]
-  );
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedName(clientName.trim());
-      setDebouncedPhone(clientPhone.trim());
-    }, 350);
-    return () => clearTimeout(handler);
-  }, [clientName, clientPhone]);
-
-  useEffect(() => {
-    const loadUsers = async () => {
-      const token = getClientToken();
-      if (!token) return;
-      try {
-        setLoadingUsers(true);
-        const data = await listUsers(token);
-        setUsers(data.map((user) => ({ id: user.id, name: user.name })));
-      } catch (error: any) {
-        toast.error(error?.message || "Erro ao carregar vendedores.");
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    void loadUsers();
-  }, []);
-
-  useEffect(() => {
-    const fetchSales = async () => {
-      const token = getClientToken();
-      if (!token) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        return;
-      }
-      try {
-        setLoading(true);
-        if (!startDate || !endDate) {
-          setSales([]);
-          return;
-        }
-        const result = await listSalesByRange(token, startDate, endDate, {
-          clientName: debouncedName,
-          clientPhone: debouncedPhone,
-          sellerId: sellerId === "all" ? "" : sellerId,
-        });
-        setSales(result);
-      } catch (error: any) {
-        toast.error(error?.message || "Erro ao carregar histórico.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchSales();
-  }, [startDate, endDate, debouncedName, debouncedPhone, sellerId]);
-
-  const formatSaleDate = (raw: Date | string) => {
-    if (typeof raw === "string") {
-      const [y, m, d] = raw.split("-").map(Number);
-      if (y && m && d) return new Date(y, m - 1, d).toLocaleDateString("pt-BR");
-    }
-    const parsed = raw instanceof Date ? raw : new Date(raw);
-    const y = parsed.getUTCFullYear();
-    const m = parsed.getUTCMonth();
-    const d = parsed.getUTCDate();
-    return new Date(y, m, d).toLocaleDateString("pt-BR");
-  };
-
-  const handleExport = () => {
-    if (!sales.length) return;
-    const headers = [
-      "Data",
-      "Hora",
-      "Cliente",
-      "Telefone",
-      "Total de Itens",
-      "Valor Total",
-      "Vendedor",
-      "Troco",
-    ];
-    const rows = sales.map((sale) => {
-      const createdAt = new Date(sale.createdAt);
-      const dateLabel = formatSaleDate(sale.saleDate);
-      const timeLabel = createdAt.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      return [
-        dateLabel,
-        timeLabel,
-        sale.clientName ?? "N/D",
-        sale.clientPhone ?? "N/D",
-        sale.totalItems,
-        sale.totalAmount,
-        sale.sellerName ?? "N/D",
-        sale.changeAmount ?? "",
-      ]
-        .map(escapeCsvValue)
-        .join(";");
-    });
-
-    const content = [headers.map(escapeCsvValue).join(";"), ...rows].join("\n");
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `historico-vendas_${startDate}_a_${endDate}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDelete = async () => {
-    if (!saleToDelete) return;
-    const token = getClientToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      return;
-    }
-    try {
-      setDeleting(true);
-      await deleteSale(token, saleToDelete.id);
-      setSales((prev) => prev.filter((sale) => sale.id !== saleToDelete.id));
-      toast.success("Venda removida com sucesso.");
-    } catch (error: any) {
-      toast.error(error?.message || "Erro ao remover venda.");
-    } finally {
-      setDeleting(false);
-      setDeleteOpen(false);
-      setSaleToDelete(null);
-    }
-  };
+  const {
+    startDate,
+    endDate,
+    setStartDate,
+    setEndDate,
+    clientName,
+    clientPhone,
+    setClientName,
+    setClientPhone,
+    sellerId,
+    setSellerId,
+    sellerOptions,
+    loadingUsers,
+    sales,
+    loading,
+    totalOfPeriod,
+    deleteOpen,
+    deleting,
+    openDelete,
+    cancelDelete,
+    confirmDelete,
+    handleExport,
+    formatSaleDate,
+    highlightedDays,
+    holidays,
+  } = useSalesHistory();
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -232,10 +78,7 @@ export default function HistoricoClientPage() {
             <Select
               value={sellerId}
               onChange={(event) => setSellerId(event.target.value)}
-              options={[
-                { value: "all", label: "Todos Vendedores" },
-                ...users.map((user) => ({ value: user.id, label: user.name })),
-              ]}
+              options={sellerOptions}
               placeholder={loadingUsers ? "Carregando..." : "Selecione o vendedor"}
               disabled={loadingUsers}
             />
@@ -245,12 +88,14 @@ export default function HistoricoClientPage() {
               value={startDate}
               onChange={setStartDate}
               highlightedDays={highlightedDays}
+              holidays={holidays}
               buttonClassName="h-11 w-full px-4 md:w-[160px]"
             />
             <DatePicker
               value={endDate}
               onChange={setEndDate}
               highlightedDays={highlightedDays}
+              holidays={holidays}
               buttonClassName="h-11 w-full px-4 md:w-[160px]"
             />
           </div>
@@ -369,8 +214,7 @@ export default function HistoricoClientPage() {
                             style={{ cursor: "pointer" }}
                             onClick={(event) => {
                               event.stopPropagation();
-                              setSaleToDelete(sale);
-                              setDeleteOpen(true);
+                              openDelete(sale);
                             }}
                           >
                             <Lucide.Trash2 className="h-4 w-4 text-red-600" />
@@ -393,12 +237,8 @@ export default function HistoricoClientPage() {
         confirmLabel="Excluir"
         confirmTone="danger"
         loading={deleting}
-        onCancel={() => {
-          if (deleting) return;
-          setDeleteOpen(false);
-          setSaleToDelete(null);
-        }}
-        onConfirm={handleDelete}
+        onCancel={cancelDelete}
+        onConfirm={confirmDelete}
       />
     </div>
   );

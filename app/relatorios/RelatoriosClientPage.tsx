@@ -1,172 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { PieChart } from "@mui/x-charts/PieChart";
 import Box from "@mui/material/Box";
 import { BarChart3, CreditCard, Receipt, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
-import { getSalesReport, type SalesReportResponse } from "@/app/actions/reports/getSalesReport";
-import { getClientToken } from "@/app/lib/auth/getClientToken";
-import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useCalendarSettings } from "@/app/hooks/useCalendarSettings";
-
-type Timeframe = "daily" | "monthly";
-
-const currencyFormatter = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
-
-function formatCurrencyAxis(raw: number | null | undefined) {
-  const val = Number(raw ?? 0);
-  if (!Number.isFinite(val)) return "R$ 0";
-  if (Math.abs(val) >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(val) >= 1_000) return `R$ ${(val / 1_000).toFixed(1)}k`;
-  return `R$ ${val.toFixed(0)}`;
-}
-
-const dateLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
-  weekday: "short",
-  day: "2-digit",
-  month: "2-digit",
-});
-
-const monthLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
-  month: "short",
-  year: "numeric",
-});
-
-function toISO(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function getInitialRange() {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - 6);
-  return { start: toISO(start), end: toISO(end) };
-}
-
-function formatChange(value: number) {
-  const rounded = Number.isFinite(value) ? value : 0;
-  const sign = rounded > 0 ? "+" : "";
-  return `${sign}${rounded.toFixed(1)}%`;
-}
-
-function formatDateLabel(date: string, grouping: "day" | "month") {
-  const parsed = new Date(`${date}T00:00:00`);
-  return grouping === "month" ? monthLabelFormatter.format(parsed) : dateLabelFormatter.format(parsed);
-}
+import { useSalesReport } from "@/app/hooks/useSalesReport";
+import { formatCurrencyAxis } from "@/app/lib/formatters/formatCurrencyAxis";
 
 export default function RelatoriosClientPage() {
-  const [report, setReport] = useState<SalesReportResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [{ start, end }, setDateRange] = useState(getInitialRange);
-  const [timeframe, setTimeframe] = useState<Timeframe>("daily");
-  const [axisColor, setAxisColor] = useState("#2d1b33");
-  const [categoryView, setCategoryView] = useState<"bars" | "pie">("bars");
-  const [trendView, setTrendView] = useState<"area" | "line" | "bar">("area");
-  const [paymentView, setPaymentView] = useState<"line" | "bar">("bar");
-  const { highlightedDays } = useCalendarSettings();
-
-  const timeframeOptions: { label: string; value: Timeframe }[] = [
-    { label: "Diário", value: "daily" },
-    { label: "Mensal", value: "monthly" },
-  ];
-
-  const summaryCards = useMemo(() => {
-    const summary = report?.summary;
-    return [
-      {
-        title: "Total de Vendas",
-        value: currencyFormatter.format(summary?.totalSales ?? 0),
-        change: summary?.salesChange ?? 0,
-        icon: CreditCard,
-        iconClasses: "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white",
-      },
-      {
-        title: "Itens Vendidos",
-        value: (summary?.totalItems ?? 0).toLocaleString("pt-BR"),
-        suffix: "unid.",
-        change: summary?.itemsChange ?? 0,
-        icon: ShoppingBag,
-        iconClasses: "bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-white",
-      },
-      {
-        title: "Ticket Médio",
-        value: currencyFormatter.format(summary?.avgTicket ?? 0),
-        change: summary?.ticketChange ?? 0,
-        icon: Receipt,
-        iconClasses: "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-white",
-      },
-    ];
-  }, [report?.summary]);
-
-  const currentGrouping: "day" | "month" = timeframe === "monthly" ? "month" : "day";
-
-  const trendLabels =
-    report?.timeline.map((point) => formatDateLabel(point.date, currentGrouping)) ?? [];
-  const trendValues = report?.timeline.map((point) => point.totalAmount ?? 0) ?? [];
-  const hasTrendData = trendLabels.length > 0 && trendValues.length > 0;
-
-  const categoryList = report?.categories ?? [];
-  const paymentDataset =
-    report?.paymentTimeline.map((item) => ({
-      label: formatDateLabel(item.date, currentGrouping),
-      credit: item.credit,
-      debit: item.debit,
-      cash: item.cash,
-      pix: item.pix,
-    })) ?? [];
-
-  const isTimeframeActive = (value: Timeframe) => timeframe === value;
-
-  const loadReport = async (startDate: string, endDate: string, grouping: "day" | "month") => {
-    if (!startDate || !endDate) return;
-    const startDateObj = new Date(`${startDate}T00:00:00`);
-    const endDateObj = new Date(`${endDate}T00:00:00`);
-
-    if (startDateObj > endDateObj) {
-      toast.error("A data inicial não pode ser maior que a final.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const token = getClientToken();
-      if (!token) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        return;
-      }
-      const data = await getSalesReport(token, { startDate, endDate, grouping });
-      setReport(data);
-    } catch (error: any) {
-      toast.error(error?.message ?? "Erro ao carregar relatórios.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTimeframeChange = (value: Timeframe) => {
-    setTimeframe(value);
-  };
-
-  useEffect(() => {
-    void loadReport(start, end, currentGrouping);
-  }, [start, end, currentGrouping]);
-
-  useEffect(() => {
-    const updateAxisColor = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      setAxisColor(isDark ? "#f7f2fb" : "#2d1b33");
-    };
-    updateAxisColor();
-    const observer = new MutationObserver(updateAxisColor);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
+  const {
+    loading,
+    start,
+    end,
+    setDateRange,
+    timeframe,
+    timeframeOptions,
+    handleTimeframeChange,
+    axisColor,
+    categoryView,
+    setCategoryView,
+    trendView,
+    setTrendView,
+    paymentView,
+    setPaymentView,
+    summaryCards,
+    currentGrouping,
+    trendLabels,
+    trendValues,
+    hasTrendData,
+    categoryList,
+    paymentDataset,
+    formatChange,
+    formatDateLabel,
+    isTimeframeActive,
+    currencyFormatter,
+    highlightedDays,
+    holidays,
+  } = useSalesReport();
 
 
   return (
@@ -216,6 +88,7 @@ export default function RelatoriosClientPage() {
                 variant="ghost"
                 size="sm"
                 highlightedDays={highlightedDays}
+                holidays={holidays}
                 buttonClassName="h-full w-full justify-start p-0 text-sm font-bold text-text-main hover:bg-transparent dark:text-white"
               />
             </div>
@@ -230,6 +103,7 @@ export default function RelatoriosClientPage() {
                 variant="ghost"
                 size="sm"
                 highlightedDays={highlightedDays}
+                holidays={holidays}
                 buttonClassName="h-full w-full justify-start p-0 text-sm font-bold text-text-main hover:bg-transparent dark:text-white"
               />
             </div>
@@ -239,7 +113,12 @@ export default function RelatoriosClientPage() {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {summaryCards.map((card) => {
-          const Icon = card.icon;
+          const Icon =
+            card.title === "Total de Vendas"
+              ? CreditCard
+              : card.title === "Itens Vendidos"
+              ? ShoppingBag
+              : Receipt;
           const isDown = (card.change ?? 0) < 0;
           return (
             <div
@@ -248,7 +127,13 @@ export default function RelatoriosClientPage() {
             >
               <div className="mb-4 flex items-start justify-between">
                 <div
-                  className={`flex size-12 items-center justify-center rounded-full transition-colors duration-300 ${card.iconClasses}`}
+                  className={`flex size-12 items-center justify-center rounded-full transition-colors duration-300 ${
+                    card.title === "Total de Vendas"
+                      ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white"
+                      : card.title === "Itens Vendidos"
+                      ? "bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-white"
+                      : "bg-accent/10 text-accent group-hover:bg-accent group-hover:text-white"
+                  }`}
                 >
                   <Icon className="h-5 w-5" />
                 </div>

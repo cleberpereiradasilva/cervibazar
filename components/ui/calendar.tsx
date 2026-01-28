@@ -64,7 +64,7 @@ export function Calendar({
           "relative flex h-9 w-9 items-center justify-center p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/10 [&:has([aria-selected])]:text-text-main dark:[&:has([aria-selected])]:bg-primary/20",
         day: "h-9 w-9 rounded-full p-0 font-semibold text-text-main hover:bg-background-light dark:text-white dark:hover:bg-white/10",
         day_button:
-          "flex h-9 w-9 items-center justify-center rounded-full p-0",
+          "flex h-9 w-9 items-center justify-center rounded-full p-0 cursor-pointer",
         day_selected:
           "bg-primary text-white hover:bg-primary-hover hover:text-white focus:bg-primary focus:text-white",
         day_today:

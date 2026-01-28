@@ -8,6 +8,7 @@ export type DatePickerProps = {
   value: string;
   onChange: (value: string) => void;
   highlightedDays?: number[];
+  holidays?: string[];
   placeholder?: string;
   buttonClassName?: string;
   showIcon?: boolean;
@@ -38,6 +39,7 @@ export function DatePicker({
   value,
   onChange,
   highlightedDays = [],
+  holidays = [],
   placeholder = "Selecione",
   buttonClassName,
   showIcon = true,
@@ -48,6 +50,7 @@ export function DatePicker({
 }: DatePickerProps) {
   const selected = parseISODate(value);
   const label = value ? formatDateLabel(value) : placeholder;
+  const holidaySet = new Set(holidays);
 
   return (
     <Popover>
@@ -76,11 +79,17 @@ export function DatePicker({
             onChange(toISODate(date));
           }}
           modifiers={{
-            highlight: (date) => highlightedDays.includes(date.getDay()),
+            highlight: (date) => {
+              if (!highlightedDays.includes(date.getDay())) return false;
+              return !holidaySet.has(toISODate(date));
+            },
+            holiday: (date) => holidaySet.has(toISODate(date)),
           }}
           modifiersClassNames={{
             highlight:
-              "bg-primary/20 text-primary hover:bg-primary-hover/40 dark:bg-primary/30 dark:text-white dark:hover:bg-primary/50",
+              "bg-primary/20 text-primary font-bold hover:bg-primary-hover/40 dark:bg-primary/30 dark:text-white dark:hover:bg-primary/50",
+            holiday:
+              "bg-red-300 text-red-900 hover:bg-red-400 dark:bg-red-900/60 dark:text-red-50",
           }}
           initialFocus
         />

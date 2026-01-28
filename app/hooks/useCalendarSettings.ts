@@ -7,6 +7,7 @@ import { getClientToken } from "@/app/lib/auth/getClientToken";
 
 export function useCalendarSettings() {
   const [highlightedDays, setHighlightedDays] = useState<number[]>([]);
+  const [holidays, setHolidays] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function useCalendarSettings() {
       if (!token) throw new Error("Sessão expirada. Faça login novamente.");
       const data = await getCalendarSettings(token);
       setHighlightedDays(data.highlightedDays ?? []);
+      setHolidays(data.holidays ?? []);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Erro ao carregar configurações.";
@@ -28,14 +30,18 @@ export function useCalendarSettings() {
     }
   }, []);
 
-  const save = useCallback(async (days: number[]) => {
+  const save = useCallback(async (days: number[], nextHolidays: string[]) => {
     setSaving(true);
     setError(null);
     try {
       const token = getClientToken();
       if (!token) throw new Error("Sessão expirada. Faça login novamente.");
-      const data = await updateCalendarSettings(token, { highlightedDays: days });
+      const data = await updateCalendarSettings(token, {
+        highlightedDays: days,
+        holidays: nextHolidays,
+      });
       setHighlightedDays(data.highlightedDays ?? days);
+      setHolidays(data.holidays ?? nextHolidays);
       return { ok: true };
     } catch (err) {
       const message =
@@ -51,5 +57,5 @@ export function useCalendarSettings() {
     void load();
   }, [load]);
 
-  return { highlightedDays, loading, saving, error, reload: load, save };
+  return { highlightedDays, holidays, loading, saving, error, reload: load, save };
 }
