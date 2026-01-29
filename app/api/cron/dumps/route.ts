@@ -9,7 +9,14 @@ function getSecret(request: Request) {
   if (auth.toLowerCase().startsWith("bearer ")) {
     return auth.slice(7).trim();
   }
-  return request.headers.get("x-cron-secret") ?? "";
+  const headerSecret = request.headers.get("x-cron-secret") ?? "";
+  if (headerSecret) return headerSecret;
+  try {
+    const url = new URL(request.url);
+    return url.searchParams.get("token") ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export async function GET(request: Request) {
