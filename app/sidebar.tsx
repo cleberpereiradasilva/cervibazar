@@ -21,6 +21,7 @@ import {
   Users,
   WalletMinimal,
   Tags as TagsIcon,
+  Wrench,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -70,6 +71,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     { label: "Categorias", icon: TagsIcon, href: "/categorias" },
     { label: "Calendario", icon: Settings2, href: "/administrativo" },
     { label: "Frase", icon: MessageSquareText, href: "/frase" },
+  ];
+  const maintenanceNavigation: NavItem[] = [
+    { label: "Dump do Banco", icon: Wrench, href: "/dumps" },
   ];
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -129,6 +133,32 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               </p>
             )}
             {adminNavigation.map((item) => {
+              const isActive = item.href !== "#" && pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  aria-label={item.label}
+                  className={`group flex items-center gap-3 rounded-xl ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"} text-text-secondary transition-all hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-[#bcaec4] dark:hover:bg-[#452b4d] dark:hover:text-white ${
+                    isActive ? "bg-primary/10 text-primary shadow-sm dark:text-white" : ""
+                  }`}
+                >
+                  <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                  {!collapsed && <span className="text-sm font-bold">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {currentUser?.role === "root" && (
+          <div className="space-y-2">
+            {!collapsed && (
+              <p className="px-4 text-xs font-bold uppercase tracking-widest text-text-secondary/60">
+                Manutenção
+              </p>
+            )}
+            {maintenanceNavigation.map((item) => {
               const isActive = item.href !== "#" && pathname.startsWith(item.href);
               return (
                 <Link

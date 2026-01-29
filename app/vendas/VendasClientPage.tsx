@@ -105,14 +105,14 @@ export default function VendasClientPage({ saleId }: VendasClientPageProps) {
         </div>
       <div className="flex flex-col gap-1 min-w-[220px]">
         <label className="ml-1 text-xs font-semibold text-text-secondary dark:text-[#bcaec4]">
-          Vendedor da venda
+          Responsável pelo caixa
         </label>
         <Select
           ref={sellerSelectRef}
           value={sellerId}
           onChange={(event) => setSellerId(event.target.value)}
           options={userOptions}
-          placeholder={loadingUsers ? "Carregando..." : "Selecione o vendedor"}
+          placeholder={loadingUsers ? "Carregando..." : "Selecione o responsável"}
           disabled={loadingUsers}
         />
       </div>

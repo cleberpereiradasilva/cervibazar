@@ -15,7 +15,18 @@ export type UpdateSaleInput = {
 
 export async function updateSale(token: string, input: UpdateSaleInput) {
   const payload = await verifyAuthToken(token);
-  const data = saleUpdateSchema().parse(input);
+  const parsed = saleUpdateSchema().safeParse(input);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    const path = first?.path?.length ? ` (${first.path.join(".")})` : "";
+    console.error("updateSale validation error:", {
+      issues: parsed.error.issues,
+      flatten: parsed.error.flatten(),
+      input,
+    });
+    throw new Error(`${first?.message ?? "Dados inválidos."}${path}`);
+  }
+  const data = parsed.data;
   return saleStore().update({
     saleId: data.id,
     saleDate: data.saleDate,
