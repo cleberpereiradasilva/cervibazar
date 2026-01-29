@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getPool } from "@/app/lib/db/client";
 import { createDump } from "@/app/lib/dumps/dumpStorage";
 
+export const runtime = "nodejs";
+
 function getSecret(request: Request) {
   const auth = request.headers.get("authorization") ?? "";
   if (auth.toLowerCase().startsWith("bearer ")) {
@@ -11,8 +13,8 @@ function getSecret(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const expected = process.env.CRON_SECRET ?? "";
-  const received = getSecret(request);
+  const expected = (process.env.CRON_SECRET ?? "").trim();
+  const received = getSecret(request).trim();
   if (!expected || received !== expected) {
     return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
   }
