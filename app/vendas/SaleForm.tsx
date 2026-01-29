@@ -105,11 +105,19 @@ export default function SaleForm({
   const [paymentReviewConfirmed, setPaymentReviewConfirmed] = useState(false);
   const [showPaymentReview, setShowPaymentReview] = useState(false);
 
+  const orderedCategories = useMemo(
+    () =>
+      [...categories].sort((a, b) =>
+        a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+      ),
+    [categories]
+  );
+
   useEffect(() => {
-    if (categories.length && !selectedCategoryId) {
-      setSelectedCategoryId(categories[0].id);
+    if (orderedCategories.length && !selectedCategoryId) {
+      setSelectedCategoryId(orderedCategories[0].id);
     }
-  }, [categories, selectedCategoryId]);
+  }, [orderedCategories, selectedCategoryId]);
 
   const totalQuantity = useMemo(
     () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
@@ -138,8 +146,7 @@ export default function SaleForm({
 
   const isEditing = Boolean(resolvedSaleId);
   const disableAll = submissionState === "submitting" || editLoading;
-  const entryTotal = entryQuantity * entryPrice;
-  const headerTotal = isEditing ? total : entryTotal;
+  const headerTotal = total;
 
   useEffect(() => {
     if (!isEditing || !initialItemsSignature) {
@@ -485,32 +492,43 @@ export default function SaleForm({
     setSubmissionState("submitting");
     setShowSuggestions(false);
 
+    const payloadCustomer = {
+      name: customer.name.trim(),
+      phone: customer.phone?.trim() ? customer.phone.trim() : undefined,
+      birthDate: customer.birthDate?.trim() ? customer.birthDate.trim() : undefined,
+    };
+    const payload = {
+      customer: payloadCustomer,
+      items: itemsPayload,
+      payments,
+      saleDate,
+      sellerId,
+    };
     try {
       if (resolvedSaleId) {
         await updateSale(token, {
           id: resolvedSaleId,
-          customer,
-          items: itemsPayload,
-          payments,
-          saleDate,
-          sellerId,
+          ...payload,
         });
         toast.success("Venda atualizada com sucesso!");
         router.push("/vendas");
       } else {
-        await createSale(token, {
-          customer,
-          items: itemsPayload,
-          payments,
-          saleDate,
-          sellerId,
-        });
+        await createSale(token, payload);
         toast.success("Venda cadastrada com sucesso!");
       }
       resetForm();
       setPaymentReviewConfirmed(false);
       setNeedsPaymentReview(false);
-    } catch {
+    } catch (error) {
+      console.error("Erro ao salvar venda:", error);
+      console.error("Payload venda (erro):", {
+        customer: payloadCustomer,
+        itemsCount: itemsPayload.length,
+        payments,
+        saleDate,
+        sellerId,
+      });
+      console.error("Payload venda JSON (erro):", JSON.stringify(payload));
       toast.error(resolvedSaleId ? "Erro ao salvar a venda!" : "Erro ao efetuar a venda!");
       setSubmissionState("failed");
     }
@@ -774,7 +792,7 @@ export default function SaleForm({
                   onChange={(e) => setSelectedCategoryId(e.target.value)}
                   disabled={disableAll}
                 >
-                  {categories.map((cat) => (
+                  {orderedCategories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>

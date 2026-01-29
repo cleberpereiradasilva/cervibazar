@@ -156,11 +156,11 @@ export default function SaleDetailClient({ saleId }: Props) {
         </div>
         <Separator />
         <div className="space-y-2">
-          {sale.items.map((item) => {
+          {sale.items.map((item, index) => {
             const Icon = (Lucide as Record<string, any>)[item.categoryIcon ?? "Tag"] ?? Lucide.Tag;
             return (
               <div
-                key={`${item.categoryId}-${item.categoryName}`}
+                key={`${item.categoryId}-${item.categoryName ?? "categoria"}-${item.unitPrice}-${index}`}
                 className="flex flex-col gap-2 rounded-xl border border-border bg-background-light px-3 py-2 dark:border-[#452b4d] dark:bg-background-dark md:flex-row md:items-center md:justify-between"
               >
                 <div className="flex items-center gap-3">

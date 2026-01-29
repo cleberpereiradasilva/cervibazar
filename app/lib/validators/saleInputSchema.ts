@@ -39,8 +39,8 @@ export function saleInputSchema() {
     sellerId: z.string().min(1, "Selecione o vendedor."),
     customer: z.object({
       name: z.string().trim().min(1).max(120),
-      phone: z.preprocess(optionalTrimmed, z.string().max(40)).optional(),
-      birthDate: z.preprocess(optionalTrimmed, dateString).optional(),
+      phone: z.preprocess(optionalTrimmed, z.string().max(40)).optional().nullable(),
+      birthDate: z.preprocess(optionalTrimmed, dateString).optional().nullable(),
     }),
     items: z
       .array(

@@ -3,11 +3,12 @@ import VendasClientPage from "./VendasClientPage";
 import { Suspense } from "react";
 
 type VendasPageProps = {
-  searchParams?: { edit?: string | string[] };
+  searchParams?: Promise<{ edit?: string | string[] }>;
 };
 
-export default function VendasPage({ searchParams }: VendasPageProps) {
-  const rawEdit = searchParams?.edit;
+export default async function VendasPage({ searchParams }: VendasPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const rawEdit = resolvedSearchParams.edit;
   const saleId =
     (Array.isArray(rawEdit) ? rawEdit[0] : rawEdit)?.trim() ?? "";
   return (

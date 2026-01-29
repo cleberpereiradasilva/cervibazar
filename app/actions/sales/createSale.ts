@@ -14,7 +14,18 @@ export type CreateSaleInput = {
 
 export async function createSale(token: string, input: CreateSaleInput) {
   const payload = await verifyAuthToken(token);
-  const data = saleInputSchema().parse(input);
+  const parsed = saleInputSchema().safeParse(input);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    const path = first?.path?.length ? ` (${first.path.join(".")})` : "";
+    console.error("createSale validation error:", {
+      issues: parsed.error.issues,
+      flatten: parsed.error.flatten(),
+      input,
+    });
+    throw new Error(`${first?.message ?? "Dados inválidos."}${path}`);
+  }
+  const data = parsed.data;
   const store = saleStore();
   return store.create({
     saleDate: data.saleDate,
